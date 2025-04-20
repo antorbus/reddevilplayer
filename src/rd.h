@@ -36,12 +36,6 @@ typedef enum {
 } playback_command_t;
 
 typedef enum {
-    MODE_NORMAL = 0,     
-    MODE_RANDOM,
-    MODE_QUEUE,
-} playback_mode_t;
-
-typedef enum {
     MASTER_OK = 0,
     MASTER_FAILED,
 } master_status_t;
@@ -62,7 +56,6 @@ extern struct player{
     master_status_t     master_command_execution_status; //set by the master command in question
     audio_status_t      audio_command_execution_status; //set by the audio thread NOT by the command TODO: make this better
     playback_command_t  command;
-    playback_mode_t     mode;
     // uint64_t            flags;
     pthread_mutex_t     lock;
     pthread_cond_t      cond_command;

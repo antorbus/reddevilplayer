@@ -113,19 +113,9 @@ int audio_player_play_pause(){
     }
     switch (audio_player.state){
 
-        case STATE_DONE:
-            audio_queue_callback((void *)&audio_player, audio_player.queue, audio_player.buf); 
-            //no break here, we want the next part to run
-            syslog(LOG_INFO, "Priming from play_pause.");
-        case STATE_PAUSED:
-
-            if (AudioQueueStart(audio_player.queue, NULL) != 0){
-                syslog(LOG_ERR, "ERROR: Could not play.");
-                return -1;
-            }
-            syslog(LOG_INFO, "Playing.");
-            audio_player.state = STATE_PLAYING;
-            break;
+        // case STATE_DONE:
+        //     syslog(LOG_INFO, "Playing new song.");
+        //     break;
 
         case STATE_PLAYING:
             if (AudioQueuePause (audio_player.queue) != 0){
@@ -134,6 +124,23 @@ int audio_player_play_pause(){
             }
             audio_player.state = STATE_PAUSED;
             syslog(LOG_INFO, "Paused.");
+            break;
+        
+        case STATE_UNINITIALIZED:
+            syslog(LOG_ERR, "ERROR: state uninitialized, nothing to play.");
+            break;
+        
+        case STATE_INITIALIZED:
+            audio_queue_callback((void *)&audio_player, audio_player.queue, audio_player.buf); 
+            //no break here, we want the next part to run
+            syslog(LOG_INFO, "Priming from play_pause.");
+        case STATE_PAUSED:
+            if (AudioQueueStart(audio_player.queue, NULL) != 0){
+                syslog(LOG_ERR, "ERROR: Could not play.");
+                return -1;
+            }
+            syslog(LOG_INFO, "Playing.");
+            audio_player.state = STATE_PLAYING;
             break;
             
         default:

@@ -4,7 +4,11 @@
 
 static CFMachPortRef        metal_tap    = NULL;
 static CFRunLoopSourceRef   metal_g_run_loop_src  = NULL;
-struct metal_audio_player   audio_player = {0};
+struct metal_audio_player   audio_player = {.buf = NULL,
+                                            .bytes_per_frame = 0,
+                                            .file = NULL, 
+                                            .queue = NULL,
+                                            .state = STATE_UNINITIALIZED};
 
 void * rd_audio_thread(void *arg) {
     
