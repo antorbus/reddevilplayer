@@ -1,6 +1,6 @@
 # RedDevil Player 
 
-RedDevilPlayer is lightweight and invisible audio player that runs as a daemon. It is vi-like with minimal visible interface and is controlled entirely through keyboard shortcuts.
+RedDevilPlayer is lightweight and invisible audio player that runs as a daemon. It is vi-like with minimal visible interface and is controlled entirely through keyboard shortcuts. It is currently only available for MacOS.
 
 ## Setup and Running
 Requires accessibility privileges to capture keyboard shortcuts. To run simply execute `make run` from the application directory.
