@@ -65,7 +65,7 @@ int audio_player_open(char *path){
     //override for hi fi (32bit) linear pcm
     pcm.mFormatID         = kAudioFormatLinearPCM;
     pcm.mFormatFlags      = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
-    pcm.mBitsPerChannel   = 32;
+    pcm.mBitsPerChannel   = 16;
     UInt32 bytesPerSample = (pcm.mBitsPerChannel + 8-1) / 8;
     pcm.mChannelsPerFrame = 2; 
     pcm.mFramesPerPacket  = 1; //1 for uncompressed audio, compressed contains more, must be overriden for linear pcm
@@ -107,6 +107,10 @@ int audio_player_open(char *path){
 
 
 int audio_player_play_pause(){
+    if (audio_player.state == STATE_UNINITIALIZED){
+        syslog(LOG_ERR, "ERROR: state uninitialized, nothing to play.");
+        return 0;
+    }
     if (!audio_player.queue){
         syslog(LOG_ERR, "Error: Audio queue not present (play_pause).");
         return -1;
@@ -124,10 +128,6 @@ int audio_player_play_pause(){
             }
             audio_player.state = STATE_PAUSED;
             syslog(LOG_INFO, "Paused.");
-            break;
-        
-        case STATE_UNINITIALIZED:
-            syslog(LOG_ERR, "ERROR: state uninitialized, nothing to play.");
             break;
         
         case STATE_INITIALIZED:
