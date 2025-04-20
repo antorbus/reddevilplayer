@@ -37,7 +37,7 @@ int audio_player_open(char *path){
         return -1;
     }
     
-    memset(&audio_player, 0, sizeof(audio_player)); //sets state to done
+    memset(&audio_player, 0, sizeof(audio_player));
 
     CFURLRef url = CFURLCreateFromFileSystemRepresentation(
                        NULL, (const UInt8*)path, (CFIndex)strlen(path), false);
@@ -101,7 +101,7 @@ int audio_player_open(char *path){
         audio_player_destroy();
         return -1;
     }
-
+    audio_player.state = STATE_INITIALIZED;
     return 0;
 }
 

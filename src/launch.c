@@ -7,12 +7,13 @@ struct player p = {
     .song_path_current  =               {0},
     .song_path_next  =                  {0},
     .song_path_prev =                   {0},
-    .audio_command_execution_status =   STATUS_DONE,
+    .master_command_execution_status =  MASTER_OK,
+    .audio_command_execution_status =   AUDIO_DONE,
     .command =                          COMMAND_NONE,
     .mode =                             MODE_NORMAL,
     // .flags =        0, 
     .lock =                             PTHREAD_MUTEX_INITIALIZER,
-    .cond_status =                      PTHREAD_COND_INITIALIZER,
+    .cond_audio =                       PTHREAD_COND_INITIALIZER,
     .cond_command =                     PTHREAD_COND_INITIALIZER,
 };
 
@@ -68,17 +69,24 @@ int rd_master_daemon(void){
         }
 
         syslog(LOG_INFO, "Command recieved.");
+        p.master_command_execution_status = MASTER_OK; 
 
-        if (master_command_handler[p.command]() != 0)
-            terminate(SIGTERM);
+        if (master_command_handler[p.command]() != 0) //STATUS_FAILED will return 0, means the app can continue but audio will not run
+            terminate(SIGTERM);                        // true failure will return -1;
 
-        p.audio_command_execution_status = STATUS_WAITING;
+        if (p.master_command_execution_status == MASTER_FAILED){
+            syslog(LOG_ERR, "ERROR: master_command_execution_status failed. Audio command will not run.");
+        } 
+        if (p.master_command_execution_status == MASTER_OK){ //aka is master_command_execution_status wasnt changed by command 
+            p.audio_command_execution_status = AUDIO_WAITING;
+        }
 
         //audio thread will acquire lock, set status to Done once its done
-        while (p.audio_command_execution_status == STATUS_WAITING){
-            pthread_cond_wait(&p.cond_status, &p.lock);
+        while (p.audio_command_execution_status == AUDIO_WAITING){
+            pthread_cond_wait(&p.cond_audio, &p.lock);
         }
-        if (p.audio_command_execution_status == STATUS_FAILED)
+
+        if (p.audio_command_execution_status == AUDIO_TERMINAL_FAILURE)
             terminate(SIGTERM);
 
         p.command = COMMAND_NONE;

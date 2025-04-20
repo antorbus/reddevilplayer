@@ -9,6 +9,8 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <dirent.h>
+#include <assert.h>
 
 int     rd_master_daemon(void);
 
@@ -39,9 +41,16 @@ typedef enum {
     MODE_QUEUE,
 } playback_mode_t;
 
-#define STATUS_WAITING 0 
-#define STATUS_DONE 1
-#define STATUS_FAILED 2
+typedef enum {
+    MASTER_OK = 0,
+    MASTER_FAILED,
+} master_status_t;
+
+typedef enum {
+    AUDIO_DONE = 0,
+    AUDIO_WAITING,     
+    AUDIO_TERMINAL_FAILURE,
+} audio_status_t;
 
 // #define FLAG_ (1u<<0)
 
@@ -49,14 +58,15 @@ extern struct player{
     char                path_working_dir[PATH_MAX];
     char                song_path_current[PATH_MAX];
     char                song_path_next[PATH_MAX];
-    char                song_path_prev[PATH_MAX];
-    int                 audio_command_execution_status;
+    char                song_path_prev[PATH_MAX];       
+    master_status_t     master_command_execution_status; //set by the master command in question
+    audio_status_t      audio_command_execution_status; //set by the audio thread NOT by the command TODO: make this better
     playback_command_t  command;
     playback_mode_t     mode;
     // uint64_t            flags;
     pthread_mutex_t     lock;
     pthread_cond_t      cond_command;
-    pthread_cond_t      cond_status;
+    pthread_cond_t      cond_audio;
 } p;
 
 typedef int (*command_handler_function)(void);

@@ -1,0 +1,16 @@
+TODO: 
+ = execution statis set by the audio thread NOT by the command make this by command
+ - clear error handling in metal_handlers
+ - add error checks around pthread_mutex_lock because they can return error codes
+ - switch to launchd
+ - icon 
+ - make it so that users cannot open help more than once
+ - make text for help better
+ - add queue files that can be created "playlists"
+ - make open recursive
+ - multiple queue things buttons to add songs to queue
+ - better status bar logo
+ - cool terminal ascii logo
+ - show song name + playtime + random + algorithmic + liked
+ - support for SID etc
+ - maybe start playback from prev song

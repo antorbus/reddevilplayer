@@ -10,24 +10,25 @@ void * rd_audio_thread(void *arg) {
     
     while (1) {
         //try the lock once, if it is in use, then continue normally playing audio
-        int rc = pthread_mutex_trylock(&p.lock);
-        if (rc == 0){
-            //we have aquired the lock, probably command will be none so we will continue singaling the master thread
-            //the master thread might not even be waiting, in this case this is not a problem since command will be none 
-            if (audio_command_handler[p.command]() != 0){
-                syslog(LOG_ERR, "ERROR: Audio command handler failed.");
-                p.audio_command_execution_status = STATUS_FAILED;
-                pthread_cond_signal(&p.cond_status);
-                pthread_mutex_unlock(&p.lock);
-                return NULL;
-            }
-                
-            p.audio_command_execution_status = STATUS_DONE;
-            pthread_cond_signal(&p.cond_status);
+        pthread_mutex_lock(&p.lock);
+        
+        //we have aquired the lock, probably p.command will be none so we will continue singaling the master thread
+        //the master thread might not even be waiting, in this case this is not a problem since command will be none
+        //so the signal will be lost which is OK 
+        if (p.audio_command_execution_status == AUDIO_WAITING && 
+            audio_command_handler[p.command]() != 0){
+
+            syslog(LOG_ERR, "ERROR: Audio command handler failed.");
+            p.audio_command_execution_status = AUDIO_TERMINAL_FAILURE; //this will kill the program
+            pthread_cond_signal(&p.cond_audio);
             pthread_mutex_unlock(&p.lock);
+            return NULL;
         }
-        //Audio player stuff
-        //...
+            
+        p.audio_command_execution_status = AUDIO_DONE;
+        pthread_cond_signal(&p.cond_audio);
+        pthread_mutex_unlock(&p.lock);
+    
     }
 
     return NULL;
@@ -59,9 +60,11 @@ void * rd_key_monitor_thread(void *arg){
 }
 
 void terminate(int sig){
-    if ((sig != SIGINT)||(sig != SIGTERM))
+    if (!((sig == SIGINT)||(sig == SIGTERM)))
         return;
     syslog(LOG_INFO, "Terminating.");
+
+    audio_player_destroy();
 
     if (metal_tap) {
         CGEventTapEnable(metal_tap, false);
@@ -76,7 +79,7 @@ void terminate(int sig){
     CFRunLoopStop(CFRunLoopGetCurrent());
 
     pthread_cond_destroy(&p.cond_command);
-    pthread_cond_destroy(&p.cond_status);
+    pthread_cond_destroy(&p.cond_audio);
     pthread_mutex_destroy(&p.lock);
 
     closelog();

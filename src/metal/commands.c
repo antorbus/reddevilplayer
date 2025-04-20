@@ -10,8 +10,7 @@ int master_command_play_pause(){
 }
 
 int audio_command_play_pause(){
-   
-    return 0;
+    return audio_player_play_pause();
 }//
 
 //TODO
@@ -49,8 +48,43 @@ int master_command_open(){
     if (choose_directory(p.path_working_dir, PATH_MAX) != 0){
         syslog(LOG_ERR, "ERROR: open failed.");
         memcpy(p.path_working_dir, prev_path_working_dir, PATH_MAX);
+        p.master_command_execution_status = MASTER_FAILED;
     }
     syslog(LOG_INFO, "Set working dir to %s", p.path_working_dir);
+    return 0;
+}
+
+int audio_command_open(){
+    if (p.song_path_next[0] == 0){
+        //we must load song
+        DIR *dir;
+        struct dirent *dp;
+        if ((dir = opendir (p.path_working_dir)) == NULL) {
+            syslog(LOG_ERR, "ERROR: Cannot open dir.");
+            return -1;
+        } 
+        int song_found = 0;
+        while ((dp = readdir (dir)) != NULL) {
+            if (strstr(dp->d_name, ".mp3") != NULL){
+                memcpy(p.song_path_next, p.path_working_dir, PATH_MAX);
+                strcat(p.song_path_next, dp->d_name);
+                syslog(LOG_INFO, "Found song %s", p.song_path_next);
+                closedir(dir);
+                song_found = 1;
+                break;
+            }
+        }
+        if (!song_found){
+            closedir(dir);
+            return -1;
+        }
+    }
+
+    if (audio_player_open(p.song_path_next) != 0)
+        return -1;
+    memcpy(p.song_path_prev, p.song_path_current, PATH_MAX);
+    memcpy(p.song_path_current, p.song_path_next, PATH_MAX);
+    memset(p.song_path_next, 0, PATH_MAX);
     return 0;
 }
 
@@ -69,6 +103,7 @@ int master_command_help(){
         CFSTR("Red Devil Player"),                             
         CFSTR(HELP_STR),                            
         NULL) != 0){
+        p.master_command_execution_status = MASTER_FAILED;
         syslog(LOG_ERR, "ERROR: Failed to open help menu.");
     }
     
@@ -104,7 +139,7 @@ command_handler_function audio_command_handler[NUM_COMMANDS] = {
     [COMMAND_PLAY_PAUSE] = audio_command_play_pause,        
     [COMMAND_NEXT] = audio_command_next,      
     [COMMAND_PREV] = audio_command_prev,       
-    [COMMAND_OPEN] = command_none, 
+    [COMMAND_OPEN] = audio_command_open, 
     [COMMAND_KILL] = command_none,
     [COMMAND_HELP] = command_none,
     [COMMAND_TOGGLE_RANDOM] = audio_command_toggle_random, 
