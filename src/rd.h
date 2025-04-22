@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
+#include <string.h>
+#include "../external/miniaudio/miniaudio.h"
 
 int     rd_master_daemon(void);
 
@@ -41,18 +43,18 @@ typedef enum {
 } master_status_t;
 
 typedef enum {
-    AUDIO_DONE = 0,
-    AUDIO_WAITING,     
-    AUDIO_TERMINAL_FAILURE,
+    AUDIO_THREAD_DONE = 0,
+    AUDIO_THREAD_WAITING,     
+    AUDIO_THREAD_TERMINAL_FAILURE,
 } audio_status_t;
 
 // #define FLAG_ (1u<<0)
 
 extern struct player{
     char                path_working_dir[PATH_MAX];
-    char                song_path_current[PATH_MAX];
-    char                song_path_next[PATH_MAX];
-    char                song_path_prev[PATH_MAX];       
+    char                sound_path_curr[PATH_MAX];
+    char                sound_path_next[PATH_MAX];
+    char                sound_path_prev[PATH_MAX];       
     master_status_t     master_command_execution_status; //set by the master command in question
     audio_status_t      audio_command_execution_status; //set by the audio thread NOT by the command TODO: make this better
     playback_command_t  command;
@@ -61,6 +63,23 @@ extern struct player{
     pthread_cond_t      cond_command;
     pthread_cond_t      cond_audio;
 } p;
+
+
+typedef enum{
+    STATE_UNINITIALIZED = 0,
+    STATE_INITIALIZED,
+    STATE_DONE,
+    STATE_PAUSED,
+    STATE_PLAYING,
+} audio_player_state;
+
+extern struct audio_player {
+    ma_engine           engine;
+    ma_sound            prev_sound;
+    ma_sound            curr_sound;
+    ma_sound            next_sound;
+    audio_player_state  state;
+} ap;
 
 typedef int (*command_handler_function)(void);
 extern command_handler_function master_command_handler[NUM_COMMANDS];
@@ -109,6 +128,12 @@ int audio_command_close(void);
 
 extern pthread_t        audio_thread;
 extern pthread_t        key_monitor_thread;
+
+int choose_directory(char *path, size_t max_len);
+int audio_player_open(char *path);
+int audio_player_play_pause();
+void audio_player_destroy(void);
+void platform_specific_destroy(void);
 
 #define SIGNAL_COMMAND(master_command, syslog_message)  \
                         do { \

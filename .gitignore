@@ -24,6 +24,8 @@
 .vscode/
 *.code-workspace
 .history/
+build/
+external/
 
 *.mp3
 *.wav

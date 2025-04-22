@@ -1,5 +1,8 @@
 TODO: 
- = execution statis set by the audio thread NOT by the command make this by command
+ - port as much code to multiplatform
+ - mention vim-like in docs
+ - add sleep to daemon for battery saving 
+ - execution statis set by the audio thread NOT by the command make this by command
  - clear error handling in metal_handlers
  - add error checks around pthread_mutex_lock because they can return error codes
  - switch to launchd

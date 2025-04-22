@@ -1,5 +1,5 @@
 #include "rd.h"
-#include "metal.h"
+#include "../metal/metal.h"
 
 int command_none(){return 0;}
 
@@ -55,7 +55,7 @@ int master_command_open(){
 }
 
 int audio_command_open(){
-    if (p.song_path_next[0] == 0){
+    if (p.sound_path_next[0] == 0){
         //we must load song
         DIR *dir;
         struct dirent *dp;
@@ -64,11 +64,12 @@ int audio_command_open(){
             return -1;
         } 
         int song_found = 0;
+        //TODO USE GLOB
         while ((dp = readdir (dir)) != NULL) {
             if (strstr(dp->d_name, ".mp3") != NULL){
-                memcpy(p.song_path_next, p.path_working_dir, PATH_MAX);
-                strcat(p.song_path_next, dp->d_name);
-                syslog(LOG_INFO, "Found song %s", p.song_path_next);
+                memcpy(p.sound_path_next, p.path_working_dir, PATH_MAX);
+                strcat(p.sound_path_next, dp->d_name);
+                syslog(LOG_INFO, "Found song %s", p.sound_path_next);
                 closedir(dir);
                 song_found = 1;
                 break;
@@ -76,15 +77,17 @@ int audio_command_open(){
         }
         if (!song_found){
             closedir(dir);
-            return -1;
+            syslog(LOG_ERR, "Did not find song");
+            return 0;
         }
     }
 
-    if (audio_player_open(p.song_path_next) != 0)
+    if (audio_player_open(p.sound_path_next) != 0)
         return -1;
-    memcpy(p.song_path_prev, p.song_path_current, PATH_MAX);
-    memcpy(p.song_path_current, p.song_path_next, PATH_MAX);
-    memset(p.song_path_next, 0, PATH_MAX);
+        
+    memcpy(p.sound_path_prev, p.sound_path_curr, PATH_MAX);
+    memcpy(p.sound_path_curr, p.sound_path_next, PATH_MAX);
+    memset(p.sound_path_next, 0, PATH_MAX);
     return 0;
 }
 
@@ -93,7 +96,7 @@ int master_command_kill(){
 }
 
 int master_command_help(){
-   
+   //TODO raygui
     if (CFUserNotificationDisplayNotice(
         10,                    
         kCFUserNotificationPlainAlertLevel, 

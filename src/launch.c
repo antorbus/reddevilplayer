@@ -4,17 +4,19 @@
 
 struct player p = {
     .path_working_dir =                 {0},
-    .song_path_current  =               {0},
-    .song_path_next  =                  {0},
-    .song_path_prev =                   {0},
+    .sound_path_curr  =                 {0},
+    .sound_path_next  =                 {0},
+    .sound_path_prev =                  {0},
     .master_command_execution_status =  MASTER_OK,
-    .audio_command_execution_status =   AUDIO_DONE,
+    .audio_command_execution_status =   AUDIO_THREAD_DONE,
     .command =                          COMMAND_NONE,
     // .flags =        0, 
     .lock =                             PTHREAD_MUTEX_INITIALIZER,
     .cond_audio =                       PTHREAD_COND_INITIALIZER,
     .cond_command =                     PTHREAD_COND_INITIALIZER,
 };
+
+struct audio_player         ap = {.state = STATE_UNINITIALIZED};
 
 pthread_t audio_thread =        NULL;
 pthread_t key_monitor_thread =  NULL;
@@ -39,24 +41,29 @@ int rd_master_daemon(void){
     signal(SIGINT,   terminate);
     signal(SIGTERM, terminate);
 
+    memset(&ap, 0, sizeof(ap));
+    if(ma_engine_init(NULL, &ap.engine)!=0){
+        syslog(LOG_ERR, "ERROR: Could not initialize miniaudio engine.");
+        return -1;
+    }
 
     if (pthread_create(&audio_thread, NULL, rd_audio_thread, NULL) != 0) {
-        syslog(LOG_ERR, "Pthread_create failed (audio thread).");
+        syslog(LOG_ERR, "ERROR: Pthread_create failed (audio thread).");
         return -1;
     }
 
     if (pthread_detach(audio_thread) != 0){
-        syslog(LOG_ERR, "Pthread_detach failed (audio thread).");
+        syslog(LOG_ERR, "ERROR: Pthread_detach failed (audio thread).");
         return -1;
     }
 
     if (pthread_create(&key_monitor_thread, NULL, rd_key_monitor_thread, NULL) != 0) {
-        syslog(LOG_ERR, "Pthread_create failed (key monitor thread thread).");
+        syslog(LOG_ERR, "ERROR: Pthread_create failed (key monitor thread thread).");
         return -1;
     }
     
     if (pthread_detach(key_monitor_thread) != 0){
-        syslog(LOG_ERR, "Pthread_detach failed (key monitor thread thread).");
+        syslog(LOG_ERR, "ERROR: Pthread_detach failed (key monitor thread thread).");
         return -1;
     }
 
@@ -77,15 +84,15 @@ int rd_master_daemon(void){
             syslog(LOG_ERR, "ERROR: master_command_execution_status failed. Audio command will not run.");
         } 
         if (p.master_command_execution_status == MASTER_OK){ //aka is master_command_execution_status wasnt changed by command 
-            p.audio_command_execution_status = AUDIO_WAITING;
+            p.audio_command_execution_status = AUDIO_THREAD_WAITING;
         }
 
         //audio thread will acquire lock, set status to Done once its done
-        while (p.audio_command_execution_status == AUDIO_WAITING){
+        while (p.audio_command_execution_status == AUDIO_THREAD_WAITING){
             pthread_cond_wait(&p.cond_audio, &p.lock);
         }
 
-        if (p.audio_command_execution_status == AUDIO_TERMINAL_FAILURE)
+        if (p.audio_command_execution_status == AUDIO_THREAD_TERMINAL_FAILURE)
             terminate(SIGTERM);
 
         p.command = COMMAND_NONE;
