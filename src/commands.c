@@ -29,12 +29,25 @@ int master_command_next(){
 }
 
 int audio_command_next(){
+    if (ap.state == STATE_UNINITIALIZED){
+        syslog(LOG_ERR, "ERROR: state uninitialized, nothing to play.");
+        return 0;
+    }
     sound_end_callback(NULL, &ap.sounds[ap.sound_curr_idx]);
     return 0;
 }//
 
 //TODO
 int master_command_prev(){
+    
+    return 0;
+}
+
+int audio_command_prev(){
+    if (ap.state == STATE_UNINITIALIZED){
+        syslog(LOG_ERR, "ERROR: state uninitialized, nothing to play.");
+        return 0;
+    }
     if (ap.sound_prev_idx != -1){
         ma_sound_stop(&ap.sounds[ap.sound_curr_idx]);
         syslog(LOG_INFO, "Sound finished.");
@@ -44,10 +57,6 @@ int master_command_prev(){
         ap.state = STATE_PLAYING;
         ma_sound_start(&ap.sounds[ap.sound_curr_idx]);
     }
-    return 0;
-}
-
-int audio_command_prev(){
     return 0;
 }//
 
@@ -111,6 +120,7 @@ int audio_command_open(){
                 closedir(dir);
                 return -1;
             }
+            usleep(100000);
             sounds_loaded++;
             syslog(LOG_INFO, "Loaded sound %s", sound_path);
         }

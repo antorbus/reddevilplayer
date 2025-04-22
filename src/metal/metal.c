@@ -14,7 +14,7 @@ void * rd_key_monitor_thread(void *arg){
 
     if (!metal_tap) {
         syslog(LOG_ERR, "ERROR: grant input monitoring and retry.\n");
-        SIGNAL_COMMAND(COMMAND_KILL, "ERROR: Key monitor thread could not intialize.");
+        kill(getpid(), SIGTERM);
         return NULL;
     }
 
@@ -54,44 +54,44 @@ CGEventRef keypress_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef
             switch (kc) {
 
             case kVK_ANSI_K: 
-                SIGNAL_COMMAND(COMMAND_KILL, "User event: termination.");
+                TRY_SIGNAL_COMMAND(COMMAND_KILL, "User event: termination.");
                 break;
             
             case kVK_ANSI_C: 
-                SIGNAL_COMMAND(COMMAND_CLOSE, "User event: close.");
+                TRY_SIGNAL_COMMAND(COMMAND_CLOSE, "User event: close.");
                 break;
 
             case kVK_ANSI_H: 
-                SIGNAL_COMMAND(COMMAND_HELP, "User event: help.");
+                TRY_SIGNAL_COMMAND(COMMAND_HELP, "User event: help.");
                 break;
 
             case kVK_ANSI_O: 
-                SIGNAL_COMMAND(COMMAND_OPEN, "User event: open.");
+                TRY_SIGNAL_COMMAND(COMMAND_OPEN, "User event: open.");
                 break;
             
             case kVK_ANSI_P: 
-                SIGNAL_COMMAND(COMMAND_PLAY_PAUSE, "User event: toggle play/pause.");
+                TRY_SIGNAL_COMMAND(COMMAND_PLAY_PAUSE, "User event: toggle play/pause.");
                 break;
 
             case kVK_ANSI_V: 
-                SIGNAL_COMMAND(COMMAND_PREV, "User event: previous sound.");
+                TRY_SIGNAL_COMMAND(COMMAND_PREV, "User event: previous sound.");
                 break;
 
             case kVK_ANSI_N: 
-                SIGNAL_COMMAND(COMMAND_NEXT, "User event: next sound.");
+                TRY_SIGNAL_COMMAND(COMMAND_NEXT, "User event: next sound.");
                 break;
 
             case kVK_ANSI_R: 
-                SIGNAL_COMMAND(COMMAND_TOGGLE_RANDOM, "User event: toggle random.");
+                TRY_SIGNAL_COMMAND(COMMAND_TOGGLE_RANDOM, "User event: toggle random.");
                 break;
                 
             // TODO
             // case kVK_ANSI_F: 
-            //     SIGNAL_COMMAND(COMMAND_SEEK, "User event: seek (forward).")
+            //     TRY_SIGNAL_COMMAND(COMMAND_SEEK, "User event: seek (forward).")
             //     break;
         
             // case kVK_ANSI_B: 
-            //     SIGNAL_COMMAND(COMMAND_SEEK, "User event: seek (backward).")
+            //     TRY_SIGNAL_COMMAND(COMMAND_SEEK, "User event: seek (backward).")
             //     break;
             // case kVK_Space: 
             //     syslog(LOG_INFO, "User event: search.");
@@ -138,6 +138,7 @@ CGEventRef keypress_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef
 }
 
 int choose_directory(char *path, size_t max_len) {
+    syslog(LOG_INFO, "Choosing dir.");
     memset(path, 0, max_len);
     const char *script =
       "osascript -e 'try' "

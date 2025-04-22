@@ -3,14 +3,16 @@
 void * rd_audio_thread(void *arg) {
 
     while (1) {
-        //try the lock once, if it is in use, then continue normally playing audio
         pthread_mutex_lock(&p.lock);
+
+        while (p.audio_command_execution_status != AUDIO_THREAD_WAITING){
+            pthread_cond_wait(&p.cond_audio, &p.lock);
+        }
         
         //we have aquired the lock, probably p.command will be none so we will continue singaling the master thread
         //the master thread might not even be waiting, in this case this is not a problem since command will be none
         //so the signal will be lost which is OK 
-        if (p.audio_command_execution_status == AUDIO_THREAD_WAITING && 
-            audio_command_handler[p.command]() != 0){
+        if (audio_command_handler[p.command]() != 0){
 
             syslog(LOG_ERR, "ERROR: Audio command handler failed.");
             p.audio_command_execution_status = AUDIO_THREAD_TERMINAL_FAILURE; //this will kill the program

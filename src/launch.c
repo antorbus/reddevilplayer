@@ -70,8 +70,11 @@ int rd_master_daemon(void){
         return -1;
     }
 
+    syslog(LOG_INFO, "...");
     for (;;) {
         pthread_mutex_lock(&p.lock);
+
+        syslog(LOG_INFO, "Waiting for command.");
 
         while (p.command == COMMAND_NONE){
             pthread_cond_wait(&p.cond_command, &p.lock);
@@ -80,26 +83,34 @@ int rd_master_daemon(void){
         syslog(LOG_INFO, "Command recieved.");
         p.master_command_execution_status = MASTER_OK; 
 
-        if (master_command_handler[p.command]() != 0) //STATUS_FAILED will return 0, means the app can continue but audio will not run
-            terminate(SIGTERM);                        // true failure will return -1;
+        if (master_command_handler[p.command]() != 0){   //STATUS_FAILED will return 0, means the app can continue but audio will not run
+            terminate(SIGTERM);                          // true failure will return -1;
+        }                       
 
         if (p.master_command_execution_status == MASTER_FAILED){
             syslog(LOG_ERR, "ERROR: master_command_execution_status failed. Audio command will not run.");
         } 
         if (p.master_command_execution_status == MASTER_OK){ //aka is master_command_execution_status wasnt changed by command 
             p.audio_command_execution_status = AUDIO_THREAD_WAITING;
+            pthread_cond_signal(&p.cond_audio);
+            syslog(LOG_INFO, "Waiting for audio status.");
         }
 
         //audio thread will acquire lock, set status to Done once its done
+       
         while (p.audio_command_execution_status == AUDIO_THREAD_WAITING){
             pthread_cond_wait(&p.cond_audio, &p.lock);
         }
-
-        if (p.audio_command_execution_status == AUDIO_THREAD_TERMINAL_FAILURE)
+        if (p.audio_command_execution_status == AUDIO_THREAD_DONE){
+            syslog(LOG_INFO, "Audio done.");
+        }
+        if (p.audio_command_execution_status == AUDIO_THREAD_TERMINAL_FAILURE){
             terminate(SIGTERM);
+        }
 
         p.command = COMMAND_NONE;
         pthread_mutex_unlock(&p.lock);
+        syslog(LOG_INFO, "...");
     }
 
     return 0;
@@ -161,7 +172,7 @@ int is_already_running(void){
     if (flock(pidfile_fd, LOCK_EX | LOCK_NB) == -1) {
         if (errno == EWOULDBLOCK) {
             fprintf(stderr, "ERROR: Another instance is already running.\n");
-            return 1;           
+            return -1;           
         }
         perror("flock");
         return -1;               

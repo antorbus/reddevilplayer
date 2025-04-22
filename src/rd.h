@@ -134,13 +134,17 @@ void platform_specific_destroy(void);
 void sound_end_callback(void *p_user_data, ma_sound *p_sound);
 int free_sounds(void);
 
-#define SIGNAL_COMMAND(master_command, syslog_message)  \
+#define TRY_SIGNAL_COMMAND(master_command, syslog_message)  \
                         do { \
-                            syslog(LOG_INFO, syslog_message);\
-                            pthread_mutex_lock(&p.lock);\
-                            pthread_cond_signal(&p.cond_command);\
-                            p.command = master_command;\
-                            pthread_mutex_unlock(&p.lock); \
+                            int rc = pthread_mutex_trylock(&p.lock);\
+                            if (rc == 0){ \
+                                pthread_cond_signal(&p.cond_command);\
+                                p.command = master_command;\
+                                syslog(LOG_INFO, syslog_message);\
+                                pthread_mutex_unlock(&p.lock); \
+                            } else{ \
+                                syslog(LOG_ERR, "ERROR: Monitor thread could not acquire lock.");\
+                            }\
                         } while(0)
 
 #endif
