@@ -56,9 +56,18 @@ void print_bindings(void){
 void sound_end_callback(void *p_user_data, ma_sound *p_sound){
     ma_sound_stop(&ap.sounds[ap.sound_curr_idx]);
     syslog(LOG_INFO, "Sound finished.");
-    syslog(LOG_INFO, "Playing next sound.");
-    ap.sound_prev_idx = ap.sound_curr_idx;
-    ap.sound_curr_idx = (ap.sound_curr_idx +1 ) % ap.num_sounds;
+    if (!(ap.flags & FLAG_LOOP)){
+        ap.sound_prev_idx = ap.sound_curr_idx;
+        if (!(ap.flags & FLAG_RANDOM)){
+            syslog(LOG_INFO, "Playing next sound.");
+            ap.sound_curr_idx = (ap.sound_curr_idx +1 ) % ap.num_sounds;
+        } else {
+            ap.sound_curr_idx = rand() % ap.num_sounds;
+            syslog(LOG_INFO, "Playing next random sound.");
+        }
+    } else {
+        syslog(LOG_INFO, "Playing in loop.");
+    }
     ap.state = STATE_PLAYING;
     ma_sound_start(&ap.sounds[ap.sound_curr_idx]);
 }

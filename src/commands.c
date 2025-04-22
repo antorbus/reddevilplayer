@@ -183,14 +183,16 @@ int master_command_help(){
     return 0;
 }
 
-//TODO
-int master_command_toggle_random(){
+
+int audio_command_toggle_random(){
+    ap.flags ^= FLAG_RANDOM;
     return 0;
 }
 
-int audio_command_toggle_random(){
+int audio_command_toggle_loop(void){
+    ap.flags ^= FLAG_LOOP;
     return 0;
-}//
+}
 
 
 command_handler_function master_command_handler[NUM_COMMANDS] = {
@@ -202,7 +204,8 @@ command_handler_function master_command_handler[NUM_COMMANDS] = {
     [COMMAND_OPEN] = master_command_open, 
     [COMMAND_KILL] = master_command_kill,
     [COMMAND_HELP] = master_command_help,
-    [COMMAND_TOGGLE_RANDOM] = master_command_toggle_random, 
+    [COMMAND_TOGGLE_RANDOM] = command_none, 
+    [COMMAND_TOGGLE_LOOP] = command_none
 };
 
 
@@ -216,4 +219,5 @@ command_handler_function audio_command_handler[NUM_COMMANDS] = {
     [COMMAND_KILL] = command_none,
     [COMMAND_HELP] = command_none,
     [COMMAND_TOGGLE_RANDOM] = audio_command_toggle_random, 
+    [COMMAND_TOGGLE_LOOP] = audio_command_toggle_loop,
 };

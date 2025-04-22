@@ -7,7 +7,6 @@ struct player p = {
     .master_command_execution_status =  MASTER_OK,
     .audio_command_execution_status =   AUDIO_THREAD_DONE,
     .command =                          COMMAND_NONE,
-    // .flags =        0, 
     .lock =                             PTHREAD_MUTEX_INITIALIZER,
     .cond_audio =                       PTHREAD_COND_INITIALIZER,
     .cond_command =                     PTHREAD_COND_INITIALIZER,
@@ -19,7 +18,9 @@ struct audio_player ap = {
     .sound_prev_idx             = -1,
     .sound_curr_idx             = -1,
     .sounds                     = NULL,       
-    .state                      = STATE_UNINITIALIZED
+    .flags                      = 0, 
+    .state                      = STATE_UNINITIALIZED,
+    
 };
 
 pthread_t audio_thread          = NULL;
@@ -27,6 +28,8 @@ pthread_t key_monitor_thread    = NULL;
 
 
 int rd_master_daemon(void){
+    
+    srand(time(NULL));
 
     if (is_already_running() != 0){
         fprintf(stderr, "ERROR: failed to launch rd master daemon.\n");

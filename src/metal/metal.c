@@ -84,6 +84,10 @@ CGEventRef keypress_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef
             case kVK_ANSI_R: 
                 TRY_SIGNAL_COMMAND(COMMAND_TOGGLE_RANDOM, "User event: toggle random.");
                 break;
+            
+            case kVK_ANSI_L: 
+                TRY_SIGNAL_COMMAND(COMMAND_TOGGLE_LOOP, "User event: toggle loop.");
+                break;   
                 
             // TODO
             // case kVK_ANSI_F: 
