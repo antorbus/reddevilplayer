@@ -71,7 +71,7 @@ int audio_command_next(){
     }
     int loop = 0;
     if (ap.flags & FLAG_LOOP){ //Next overrides loop, but sets it back after
-        int loop = 1;
+        loop = 1;
         ap.flags ^= FLAG_LOOP;
     }
     sound_end_callback(NULL, &ap.sounds[ap.sound_curr_idx]);
