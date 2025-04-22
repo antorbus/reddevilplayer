@@ -7,30 +7,62 @@ LDFLAGS := -lpthread \
            -framework CoreFoundation \
            -framework Carbon \
 
-SRCDIR   		:= src
-METALDIR 		:= $(SRCDIR)/metal
-EXTERNALDIR 	:= external
-MINIAUDIODIR 	:= $(EXTERNALDIR)/miniaudio
+SRCDIR        := src
+METALDIR      := $(SRCDIR)/metal
+EXTERNALDIR   := external
+MINIAUDIODIR  := $(EXTERNALDIR)/miniaudio
+RAYLIBDIR     := $(EXTERNALDIR)/raylib
+RAYGUIDIR     := $(EXTERNALDIR)/raygui
+
+RAYLIB_REPO   := https://github.com/raysan5/raylib.git
+CURL          := curl -L
 
 SRCS := $(wildcard $(SRCDIR)/*.c) \
-        $(wildcard $(METALDIR)/*.c) \
-		$(wildcard $(MINIAUDIODIR)/*.c) 
+		$(wildcard $(METALDIR)/*.c) \
+		$(MINIAUDIODIR)/miniaudio.c 
 
 OBJS := $(SRCS:.c=.o)
 
 CFLAGS += -I$(MINIAUDIODIR)
 
-TARGET  := RedDevilPlayer
+TARGET := RedDevilPlayer
 
-.PHONY: all clean run
+.PHONY: all clean run external
 
-all: $(TARGET)
+all: external $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+external: $(RAYLIBDIR) \
+          $(MINIAUDIODIR)/miniaudio.c \
+          $(MINIAUDIODIR)/miniaudio.h \
+          $(RAYGUIDIR)/raygui.h
+	@echo "External libraries ready."
+
+$(EXTERNALDIR):
+	@mkdir -p $@
+
+$(RAYLIBDIR): | $(EXTERNALDIR)
+	@git clone --depth 1 $(RAYLIB_REPO) $@
+
+$(MINIAUDIODIR):
+	@mkdir -p $@
+
+$(MINIAUDIODIR)/miniaudio.h: | $(MINIAUDIODIR)
+	@$(CURL) https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h -o $@
+
+$(MINIAUDIODIR)/miniaudio.c: | $(MINIAUDIODIR)
+	@$(CURL) https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.c -o $@
+
+$(RAYGUIDIR):
+	@mkdir -p $@
+
+$(RAYGUIDIR)/raygui.h: | $(RAYGUIDIR)
+	@$(CURL) https://raw.githubusercontent.com/raysan5/raygui/master/src/raygui.h -o $@
 
 run: $(TARGET)
 	./$(TARGET)

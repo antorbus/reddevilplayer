@@ -1,4 +1,6 @@
 TODO: 
+ - add previuous song has a bigger buffer
+ - buffer commads instead of losing them if processing is happening
  - port as much code to multiplatform
  - mention vim-like in docs
  - add sleep to daemon for battery saving 

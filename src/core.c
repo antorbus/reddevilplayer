@@ -85,46 +85,6 @@ int free_sounds(void){
 }
 
 
-int audio_player_play_pause(){
-    if (ap.state == STATE_UNINITIALIZED){
-        syslog(LOG_ERR, "ERROR: state uninitialized, nothing to play.");
-        return 0;
-    }
-   
-    switch (ap.state){
-
-        // case STATE_DONE:
-        //     syslog(LOG_INFO, "Playing new sound.");
-        //     break;
-
-        case STATE_PLAYING:
-            if (ma_sound_stop(&ap.sounds[ap.sound_curr_idx]) != 0){
-                syslog(LOG_ERR, "ERROR: Could not pause.");
-                return -1;
-            }
-            ap.state = STATE_PAUSED;
-            syslog(LOG_INFO, "Paused.");
-            break;
-        
-        case STATE_INITIALIZED:
-            syslog(LOG_INFO, "Playing after.");
-        case STATE_PAUSED:
-            if (ma_sound_start(&ap.sounds[ap.sound_curr_idx]) != 0){
-                syslog(LOG_ERR, "ERROR: Could not play.");
-                return -1;
-            }
-            syslog(LOG_INFO, "Playing.");
-            ap.state = STATE_PLAYING;
-            break;
-            
-        default:
-            syslog(LOG_ERR, "ERROR: Unrecognized audio player state.");
-            return -1;
-            break;
-    }
-    return 0;
-}
-
 void audio_player_destroy(void){
     free_sounds();
     if (ma_engine_stop(&ap.engine)!=0){

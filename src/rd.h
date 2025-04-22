@@ -128,7 +128,6 @@ extern pthread_t        audio_thread;
 extern pthread_t        key_monitor_thread;
 
 int choose_directory(char *path, size_t max_len);
-int audio_player_play_pause();
 void audio_player_destroy(void);
 void platform_specific_destroy(void);
 void sound_end_callback(void *p_user_data, ma_sound *p_sound);
