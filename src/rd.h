@@ -51,10 +51,7 @@ typedef enum {
 // #define FLAG_ (1u<<0)
 
 extern struct player{
-    char                path_working_dir[PATH_MAX];
-    char                sound_path_curr[PATH_MAX];
-    char                sound_path_next[PATH_MAX];
-    char                sound_path_prev[PATH_MAX];       
+    char                path_working_dir[PATH_MAX];  
     master_status_t     master_command_execution_status; //set by the master command in question
     audio_status_t      audio_command_execution_status; //set by the audio thread NOT by the command TODO: make this better
     playback_command_t  command;
@@ -75,9 +72,10 @@ typedef enum{
 
 extern struct audio_player {
     ma_engine           engine;
-    ma_sound            prev_sound;
-    ma_sound            curr_sound;
-    ma_sound            next_sound;
+    int                 num_sounds;
+    int                 sound_prev_idx;
+    int                 sound_curr_idx;
+    ma_sound            *sounds;
     audio_player_state  state;
 } ap;
 
@@ -130,10 +128,11 @@ extern pthread_t        audio_thread;
 extern pthread_t        key_monitor_thread;
 
 int choose_directory(char *path, size_t max_len);
-int audio_player_open(char *path);
 int audio_player_play_pause();
 void audio_player_destroy(void);
 void platform_specific_destroy(void);
+void sound_end_callback(void *p_user_data, ma_sound *p_sound);
+int free_sounds(void);
 
 #define SIGNAL_COMMAND(master_command, syslog_message)  \
                         do { \

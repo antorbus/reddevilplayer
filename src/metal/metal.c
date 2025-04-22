@@ -1,6 +1,48 @@
 #include "rd.h"
 #include "metal.h"
 
+CFMachPortRef       metal_tap;
+CFRunLoopSourceRef  metal_g_run_loop_src;
+
+void * rd_key_monitor_thread(void *arg){
+
+    metal_tap = CGEventTapCreate(
+        kCGSessionEventTap, kCGHeadInsertEventTap,
+        kCGEventTapOptionDefault,
+        CGEventMaskBit(kCGEventKeyDown),
+        keypress_callback, NULL);
+
+    if (!metal_tap) {
+        syslog(LOG_ERR, "ERROR: grant input monitoring and retry.\n");
+        SIGNAL_COMMAND(COMMAND_KILL, "ERROR: Key monitor thread could not intialize.");
+        return NULL;
+    }
+
+    metal_g_run_loop_src = CFMachPortCreateRunLoopSource(NULL, metal_tap, 0);
+    CFRunLoopAddSource(CFRunLoopGetCurrent(), metal_g_run_loop_src, kCFRunLoopCommonModes);
+    CGEventTapEnable(metal_tap, true);
+    
+    syslog(LOG_INFO, "Starting key monitor thread with event tap.");
+
+    CFRunLoopRun();
+
+    return NULL;
+}
+
+void platform_specific_destroy(void){
+    if (metal_tap) {
+        CGEventTapEnable(metal_tap, false);
+        CFMachPortInvalidate(metal_tap);
+    }
+
+    if (metal_g_run_loop_src) {
+        CFRunLoopRemoveSource(CFRunLoopGetCurrent(), metal_g_run_loop_src, kCFRunLoopCommonModes);
+        CFRelease(metal_g_run_loop_src);
+    }
+
+    CFRunLoopStop(CFRunLoopGetCurrent());
+}
+
 
 CGEventRef keypress_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef event, void *info) {
     if (type == kCGEventKeyDown) {
@@ -32,11 +74,11 @@ CGEventRef keypress_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef
                 break;
 
             case kVK_ANSI_V: 
-                SIGNAL_COMMAND(COMMAND_PREV, "User event: previous song.");
+                SIGNAL_COMMAND(COMMAND_PREV, "User event: previous sound.");
                 break;
 
             case kVK_ANSI_N: 
-                SIGNAL_COMMAND(COMMAND_NEXT, "User event: next song.");
+                SIGNAL_COMMAND(COMMAND_NEXT, "User event: next sound.");
                 break;
 
             case kVK_ANSI_R: 

@@ -1,8 +1,4 @@
 #include "rd.h"
-#include "metal.h"
-
-CFMachPortRef       metal_tap;
-CFRunLoopSourceRef  metal_g_run_loop_src;
 
 void * rd_audio_thread(void *arg) {
 
@@ -32,45 +28,6 @@ void * rd_audio_thread(void *arg) {
     return NULL;
 }
 
-void * rd_key_monitor_thread(void *arg){
-
-    metal_tap = CGEventTapCreate(
-        kCGSessionEventTap, kCGHeadInsertEventTap,
-        kCGEventTapOptionDefault,
-        CGEventMaskBit(kCGEventKeyDown),
-        keypress_callback, NULL);
-
-    if (!metal_tap) {
-        syslog(LOG_ERR, "ERROR: grant input monitoring and retry.\n");
-        SIGNAL_COMMAND(COMMAND_KILL, "ERROR: Key monitor thread could not intialize.");
-        return NULL;
-    }
-
-    metal_g_run_loop_src = CFMachPortCreateRunLoopSource(NULL, metal_tap, 0);
-    CFRunLoopAddSource(CFRunLoopGetCurrent(), metal_g_run_loop_src, kCFRunLoopCommonModes);
-    CGEventTapEnable(metal_tap, true);
-    
-    syslog(LOG_INFO, "Starting key monitor thread with event tap.");
-
-    CFRunLoopRun();
-
-    return NULL;
-}
-
-void platform_specific_destroy(void){
-    if (metal_tap) {
-        CGEventTapEnable(metal_tap, false);
-        CFMachPortInvalidate(metal_tap);
-    }
-
-    if (metal_g_run_loop_src) {
-        CFRunLoopRemoveSource(CFRunLoopGetCurrent(), metal_g_run_loop_src, kCFRunLoopCommonModes);
-        CFRelease(metal_g_run_loop_src);
-    }
-
-    CFRunLoopStop(CFRunLoopGetCurrent());
-}
-
 void terminate(int sig){
     if (!((sig == SIGINT)||(sig == SIGTERM)))
         return;
@@ -94,28 +51,34 @@ void print_bindings(void){
     return;
 }
 
-
-
-
-
-void ma_sound_end_callback(void *p_user_data, ma_sound *p_sound){
-    ap.state = STATE_DONE;
-    //TODO...
+void sound_end_callback(void *p_user_data, ma_sound *p_sound){
+    ma_sound_stop(&ap.sounds[ap.sound_curr_idx]);
+    syslog(LOG_INFO, "Sound finished.");
+    syslog(LOG_INFO, "Playing next sound.");
+    ap.sound_prev_idx = ap.sound_curr_idx;
+    ap.sound_curr_idx = (ap.sound_curr_idx +1 ) % ap.num_sounds;
+    ap.state = STATE_PLAYING;
+    ma_sound_start(&ap.sounds[ap.sound_curr_idx]);
 }
 
-int audio_player_open(char *path){
-    
-    ma_sound_uninit(&ap.prev_sound);
-    ap.prev_sound = ap.curr_sound;
-    if (ma_sound_init_from_file(&ap.engine, path, 0, NULL, NULL, &ap.curr_sound) != 0){
-        syslog(LOG_ERR, "ERROR: Could not initialize sound.");
+int free_sounds(void){
+    if ((ap.num_sounds != 0) ^ (ap.sounds != NULL)){
+        syslog(LOG_ERR, "ERROR: One of num_sounds or sounds is zero while the other one is non zero.");
         return -1;
     }
-    if (ma_sound_set_end_callback(&ap.curr_sound, ma_sound_end_callback, NULL) != 0){
-        syslog(LOG_ERR, "ERROR: Could not set ma end callback.");
-        return -1;
+    if ((ap.num_sounds != 0) && (ap.sounds != NULL)){
+        syslog(LOG_INFO, "Clearing sounds.");
+        if (ma_sound_stop(&ap.sounds[ap.sound_curr_idx])!=0){
+            syslog(LOG_ERR, "ERROR: Could not stop current sound (free_sounds).");
+        }
+        for (int i = 0; i<ap.num_sounds; i++){
+            ma_sound_uninit(&ap.sounds[i]);
+        }
+        ap.num_sounds = 0;
+        free(ap.sounds);
+        ap.sounds = NULL;
     }
-    ap.state = STATE_INITIALIZED;
+    ap.state = STATE_UNINITIALIZED;
     return 0;
 }
 
@@ -129,11 +92,11 @@ int audio_player_play_pause(){
     switch (ap.state){
 
         // case STATE_DONE:
-        //     syslog(LOG_INFO, "Playing new song.");
+        //     syslog(LOG_INFO, "Playing new sound.");
         //     break;
 
         case STATE_PLAYING:
-            if (ma_sound_stop(&ap.curr_sound) != 0){
+            if (ma_sound_stop(&ap.sounds[ap.sound_curr_idx]) != 0){
                 syslog(LOG_ERR, "ERROR: Could not pause.");
                 return -1;
             }
@@ -142,9 +105,9 @@ int audio_player_play_pause(){
             break;
         
         case STATE_INITIALIZED:
-            syslog(LOG_INFO, "Priming from play_pause.");
+            syslog(LOG_INFO, "Playing after.");
         case STATE_PAUSED:
-            if (ma_sound_start(&ap.curr_sound) != 0){
+            if (ma_sound_start(&ap.sounds[ap.sound_curr_idx]) != 0){
                 syslog(LOG_ERR, "ERROR: Could not play.");
                 return -1;
             }
@@ -161,12 +124,10 @@ int audio_player_play_pause(){
 }
 
 void audio_player_destroy(void){
+    free_sounds();
     if (ma_engine_stop(&ap.engine)!=0){
         syslog(LOG_ERR, "ERROR: Could not stop engine (destroy).");
     }
-    ma_sound_uninit(&ap.prev_sound);
-    ma_sound_uninit(&ap.curr_sound);
-    ma_sound_uninit(&ap.next_sound);
     ma_engine_uninit(&ap.engine);
     ap.state = STATE_DONE;
 }

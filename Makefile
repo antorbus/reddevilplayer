@@ -5,7 +5,6 @@ CFLAGS  := -Wall -g -I src -I src/metal
 
 LDFLAGS := -lpthread \
            -framework CoreFoundation \
-           -framework CoreGraphics \
            -framework Carbon \
 
 SRCDIR   		:= src

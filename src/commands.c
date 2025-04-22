@@ -1,5 +1,4 @@
 #include "rd.h"
-#include "../metal/metal.h"
 
 int command_none(){return 0;}
 
@@ -30,11 +29,21 @@ int master_command_next(){
 }
 
 int audio_command_next(){
+    sound_end_callback(NULL, &ap.sounds[ap.sound_curr_idx]);
     return 0;
 }//
 
 //TODO
 int master_command_prev(){
+    if (ap.sound_prev_idx != -1){
+        ma_sound_stop(&ap.sounds[ap.sound_curr_idx]);
+        syslog(LOG_INFO, "Sound finished.");
+        syslog(LOG_INFO, "Playing prev sound.");
+        ap.sound_curr_idx = ap.sound_prev_idx;
+        ap.sound_prev_idx = -1;
+        ap.state = STATE_PLAYING;
+        ma_sound_start(&ap.sounds[ap.sound_curr_idx]);
+    }
     return 0;
 }
 
@@ -55,39 +64,66 @@ int master_command_open(){
 }
 
 int audio_command_open(){
-    if (p.sound_path_next[0] == 0){
-        //we must load song
-        DIR *dir;
-        struct dirent *dp;
-        if ((dir = opendir (p.path_working_dir)) == NULL) {
-            syslog(LOG_ERR, "ERROR: Cannot open dir.");
-            return -1;
-        } 
-        int song_found = 0;
-        //TODO USE GLOB
-        while ((dp = readdir (dir)) != NULL) {
-            if (strstr(dp->d_name, ".mp3") != NULL){
-                memcpy(p.sound_path_next, p.path_working_dir, PATH_MAX);
-                strcat(p.sound_path_next, dp->d_name);
-                syslog(LOG_INFO, "Found song %s", p.sound_path_next);
-                closedir(dir);
-                song_found = 1;
-                break;
-            }
-        }
-        if (!song_found){
-            closedir(dir);
-            syslog(LOG_ERR, "Did not find song");
-            return 0;
+    DIR *dir;
+    struct dirent *dp;
+    if ((dir = opendir (p.path_working_dir)) == NULL) {
+        syslog(LOG_ERR, "ERROR: Cannot open dir.");
+        return -1;
+    } 
+    int sounds_found = 0;
+    //TODO USE GLOB
+    while ((dp = readdir(dir)) != NULL) {
+        if (strstr(dp->d_name, ".mp3") != NULL){
+            syslog(LOG_INFO, "Found sound %s", dp->d_name);
+            sounds_found++;
         }
     }
-
-    if (audio_player_open(p.sound_path_next) != 0)
+    if (!sounds_found){
+        syslog(LOG_ERR, "Did not find sound.");
+        closedir(dir);
+        return 0;
+    }
+    if (free_sounds() !=0 ){
+        closedir(dir);
         return -1;
-        
-    memcpy(p.sound_path_prev, p.sound_path_curr, PATH_MAX);
-    memcpy(p.sound_path_curr, p.sound_path_next, PATH_MAX);
-    memset(p.sound_path_next, 0, PATH_MAX);
+    }
+    ap.sounds = (ma_sound *)malloc(sounds_found * sizeof(ma_sound));
+    if (ap.sounds == NULL){
+        syslog(LOG_ERR, "Malloc failed to allocate space for %d sounds.", ap.num_sounds);
+        return -1;
+    }
+    ap.num_sounds = sounds_found;
+    syslog(LOG_INFO, "Malloc'd space for %d sounds.", ap.num_sounds);
+    int sounds_loaded = 0;
+    rewinddir(dir);
+    char sound_path[PATH_MAX];
+    while ((dp = readdir(dir)) != NULL) {
+        if (strstr(dp->d_name, ".mp3") != NULL){
+            memcpy(sound_path, p.path_working_dir, PATH_MAX);
+            strcat(sound_path, dp->d_name);
+            if (ma_sound_init_from_file(&ap.engine, sound_path, 0, NULL, NULL, &ap.sounds[sounds_loaded]) != 0){
+                syslog(LOG_ERR, "ERROR: Could not initialize sound %s.", sound_path);
+                closedir(dir);
+                return -1;
+            }
+            if (ma_sound_set_end_callback(&ap.sounds[sounds_loaded], sound_end_callback, NULL) != 0){
+                syslog(LOG_ERR, "ERROR: Could not set ma end callback for %s.", sound_path);
+                closedir(dir);
+                return -1;
+            }
+            sounds_loaded++;
+            syslog(LOG_INFO, "Loaded sound %s", sound_path);
+        }
+    }
+    closedir(dir);
+    if (sounds_loaded != ap.num_sounds){
+        syslog(LOG_ERR, "ERROR: Could not load all sounds.");
+        return -1;
+    }
+    ap.sound_curr_idx = 0;
+    ap.sound_prev_idx = -1;
+    ap.state = STATE_INITIALIZED;
+    syslog(LOG_INFO, "Successfully loaded all %d sounds.", sounds_loaded);
     return 0;
 }
 
@@ -97,18 +133,6 @@ int master_command_kill(){
 
 int master_command_help(){
    //TODO raygui
-    if (CFUserNotificationDisplayNotice(
-        10,                    
-        kCFUserNotificationPlainAlertLevel, 
-        NULL,                               
-        NULL,                              
-        NULL,                              
-        CFSTR("Red Devil Player"),                             
-        CFSTR(HELP_STR),                            
-        NULL) != 0){
-        p.master_command_execution_status = MASTER_FAILED;
-        syslog(LOG_ERR, "ERROR: Failed to open help menu.");
-    }
     
     return 0;
 }

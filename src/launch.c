@@ -4,9 +4,6 @@
 
 struct player p = {
     .path_working_dir =                 {0},
-    .sound_path_curr  =                 {0},
-    .sound_path_next  =                 {0},
-    .sound_path_prev =                  {0},
     .master_command_execution_status =  MASTER_OK,
     .audio_command_execution_status =   AUDIO_THREAD_DONE,
     .command =                          COMMAND_NONE,
@@ -16,10 +13,17 @@ struct player p = {
     .cond_command =                     PTHREAD_COND_INITIALIZER,
 };
 
-struct audio_player         ap = {.state = STATE_UNINITIALIZED};
+struct audio_player ap = {  
+    .engine                     = {},  
+    .num_sounds                 = 0, 
+    .sound_prev_idx             = -1,
+    .sound_curr_idx             = -1,
+    .sounds                     = NULL,       
+    .state                      = STATE_UNINITIALIZED
+};
 
-pthread_t audio_thread =        NULL;
-pthread_t key_monitor_thread =  NULL;
+pthread_t audio_thread          = NULL;
+pthread_t key_monitor_thread    = NULL;
 
 
 int rd_master_daemon(void){
@@ -41,7 +45,6 @@ int rd_master_daemon(void){
     signal(SIGINT,   terminate);
     signal(SIGTERM, terminate);
 
-    memset(&ap, 0, sizeof(ap));
     if(ma_engine_init(NULL, &ap.engine)!=0){
         syslog(LOG_ERR, "ERROR: Could not initialize miniaudio engine.");
         return -1;
