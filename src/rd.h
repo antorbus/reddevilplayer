@@ -72,10 +72,11 @@ typedef enum{
 
 #define FLAG_LOOP   (1<<0u)
 #define FLAG_RANDOM (1<<1u)
-
+ 
 extern struct audio_player {
     ma_engine           engine;
     int                 num_sounds;
+    char                *names; //PATH_MAX x num_sounds
     int                 sound_prev_idx;
     int                 sound_curr_idx;
     ma_sound            *sounds;

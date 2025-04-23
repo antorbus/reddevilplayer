@@ -143,6 +143,7 @@ int audio_command_open(){
         return -1;
     }
     ap.sounds = (ma_sound *)malloc(sounds_found * sizeof(ma_sound));
+    ap.names =  (char *)calloc(sounds_found, PATH_MAX);
     if (ap.sounds == NULL){
         syslog(LOG_ERR, "Malloc failed to allocate space for %d sounds.", ap.num_sounds);
         return -1;
@@ -154,6 +155,7 @@ int audio_command_open(){
     char sound_path[PATH_MAX];
     while ((dp = readdir(dir)) != NULL) {
         if (strstr(dp->d_name, ".mp3") != NULL){
+            memcpy(&ap.names[PATH_MAX*sounds_loaded], dp->d_name, PATH_MAX);
             memcpy(sound_path, p.path_working_dir, PATH_MAX);
             strcat(sound_path, dp->d_name);
             if (ma_sound_init_from_file(&ap.engine, sound_path, 0, NULL, NULL, &ap.sounds[sounds_loaded]) != 0){
@@ -166,7 +168,7 @@ int audio_command_open(){
                 closedir(dir);
                 return -1;
             }
-            usleep(100000);
+            // usleep(100000);
             sounds_loaded++;
             syslog(LOG_INFO, "Loaded sound %s", sound_path);
         }

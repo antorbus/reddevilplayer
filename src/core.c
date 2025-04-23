@@ -70,6 +70,7 @@ void sound_end_callback(void *p_user_data, ma_sound *p_sound){
     }
     ap.state = STATE_PLAYING;
     ma_sound_start(&ap.sounds[ap.sound_curr_idx]);
+    syslog(LOG_INFO, "Playing %s", &ap.names[ap.sound_curr_idx * PATH_MAX]);
 }
 
 int free_sounds(void){
@@ -88,6 +89,10 @@ int free_sounds(void){
         ap.num_sounds = 0;
         free(ap.sounds);
         ap.sounds = NULL;
+    }
+    if (ap.names != NULL){
+        free(ap.names);
+        ap.names = NULL;
     }
     ap.state = STATE_UNINITIALIZED;
     return 0;
