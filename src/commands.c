@@ -125,8 +125,10 @@ int audio_command_open(){
     } 
     int sounds_found = 0;
     //TODO USE GLOB
-    while ((dp = readdir(dir)) != NULL) {
-        if (strstr(dp->d_name, ".mp3") != NULL){
+    while ((dp = readdir(dir)) != NULL) { 
+        if ((strstr(dp->d_name, ".mp3") != NULL) || 
+            (strstr(dp->d_name, ".flac") != NULL) ||
+            (strstr(dp->d_name, ".wav") != NULL)) {
             syslog(LOG_INFO, "Found sound %s", dp->d_name);
             sounds_found++;
         }

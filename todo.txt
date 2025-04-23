@@ -1,4 +1,5 @@
 TODO: 
+ - make finding audio files by type better
  - add audio UI instead of GUI?
  - add previuous song has a bigger buffer
  - buffer commads instead of losing them if processing is happening
