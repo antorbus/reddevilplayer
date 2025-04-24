@@ -1,4 +1,5 @@
 TODO: 
+ - fix fastforward effect
  - make finding audio files by type better
  - add audio UI instead of GUI?
  - buffer commads instead of losing them if processing is happening
