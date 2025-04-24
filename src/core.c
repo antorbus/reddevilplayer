@@ -57,7 +57,10 @@ void sound_end_callback(void *p_user_data, ma_sound *p_sound){
     ma_sound_stop(&ap.sounds[ap.sound_curr_idx]);
     syslog(LOG_INFO, "Sound finished.");
     if (!(ap.flags & FLAG_LOOP)){
-        ap.sound_prev_idx = ap.sound_curr_idx;
+        for (int i = NUM_SOUND_PREV-1; i > 0; i--){
+            ap.sound_prev_idx[i] = ap.sound_prev_idx[i-1];
+        }
+        ap.sound_prev_idx[0] = ap.sound_curr_idx;
         if (!(ap.flags & FLAG_RANDOM)){
             syslog(LOG_INFO, "Playing next sound.");
             ap.sound_curr_idx = (ap.sound_curr_idx +1 ) % ap.num_sounds;

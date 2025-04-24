@@ -92,13 +92,16 @@ int audio_command_prev(){
         syslog(LOG_ERR, "ERROR: state uninitialized, nothing to play.");
         return 0;
     }
-    if (ap.sound_prev_idx != -1){
+    if (ap.sound_prev_idx[0] != -1){
         ma_sound_stop(&ap.sounds[ap.sound_curr_idx]);
         syslog(LOG_INFO, "Sound finished.");
-        syslog(LOG_INFO, "Playing prev sound.");
-        ap.sound_curr_idx = ap.sound_prev_idx;
-        ap.sound_prev_idx = -1;
+        ap.sound_curr_idx = ap.sound_prev_idx[0];
+        for (int i = 0; i< NUM_SOUND_PREV-1; i++){
+            ap.sound_prev_idx[i] = ap.sound_prev_idx[i+1];
+        }
+        ap.sound_prev_idx[NUM_SOUND_PREV-1] = -1;
         ap.state = STATE_PLAYING;
+        syslog(LOG_INFO, "Playing prev sound %s.", &ap.names[PATH_MAX*ap.sound_curr_idx]);
         ma_sound_start(&ap.sounds[ap.sound_curr_idx]);
     }
     return 0;
@@ -179,7 +182,9 @@ int audio_command_open(){
         return -1;
     }
     ap.sound_curr_idx = 0;
-    ap.sound_prev_idx = -1;
+    for (int i = 0; i < NUM_SOUND_PREV; i++){
+        ap.sound_prev_idx[i] = -1;
+    }
     ap.state = STATE_INITIALIZED;
     syslog(LOG_INFO, "Successfully loaded all %d sounds.", sounds_loaded);
     return 0;

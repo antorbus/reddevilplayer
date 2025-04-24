@@ -15,7 +15,7 @@ struct player p = {
 struct audio_player ap = {  
     .engine                     = {},  
     .num_sounds                 = 0, 
-    .sound_prev_idx             = -1,
+    .sound_prev_idx             = {[0 ... NUM_SOUND_PREV-1] = -1},
     .sound_curr_idx             = -1,
     .sounds                     = NULL,       
     .flags                      = 0, 
@@ -28,7 +28,7 @@ pthread_t key_monitor_thread    = NULL;
 
 
 int rd_master_daemon(void){
-    
+
     srand(time(NULL));
 
     if (is_already_running() != 0){
