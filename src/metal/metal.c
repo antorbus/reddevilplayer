@@ -89,48 +89,49 @@ CGEventRef keypress_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef
                 TRY_SIGNAL_COMMAND(COMMAND_TOGGLE_LOOP, "User event: toggle loop.");
                 break;   
                 
-            // TODO
-            // case kVK_ANSI_F: 
-            //     TRY_SIGNAL_COMMAND(COMMAND_SEEK, "User event: seek (forward).")
-            //     break;
+           
+            case kVK_ANSI_F: 
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: seek (forward).", COMMAND_FLAG_SEEK_FORWARD);
+                break;
         
-            // case kVK_ANSI_B: 
-            //     TRY_SIGNAL_COMMAND(COMMAND_SEEK, "User event: seek (backward).")
-            //     break;
+            case kVK_ANSI_B: 
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: seek (backward).", COMMAND_FLAG_SEEK_BACKWARD);
+                break;
+                // TODO
             // case kVK_Space: 
             //     syslog(LOG_INFO, "User event: search.");
             //     break;
 
-            // case kVK_ANSI_0:
-            //     syslog(LOG_INFO, "User event: playback from 0%%.");
-            //     break;
-            // case kVK_ANSI_1:
-            //     syslog(LOG_INFO, "User event: playback from 10%%.");
-            //     break;
-            // case kVK_ANSI_2:
-            //     syslog(LOG_INFO, "User event: playback from 20%%.");
-            //     break;
-            // case kVK_ANSI_3:
-            //     syslog(LOG_INFO, "User event: playback from 30%%.");
-            //     break;
-            // case kVK_ANSI_4:
-            //     syslog(LOG_INFO, "User event: playback from 4%%.");
-            //     break;
-            // case kVK_ANSI_5:
-            //     syslog(LOG_INFO, "User event: playback from 50%%.");
-            //     break;
-            // case kVK_ANSI_6:
-            //     syslog(LOG_INFO, "User event: playback from 60%%.");
-            //     break;
-            // case kVK_ANSI_7:
-            //     syslog(LOG_INFO, "User event: playback from 70%%.");
-            //     break;
-            // case kVK_ANSI_8:
-            //     syslog(LOG_INFO, "User event: playback from 80%%.");
-            //     break;
-            // case kVK_ANSI_9:
-            //     syslog(LOG_INFO, "User event: playback from 90%%.");
-            //     break;
+            case kVK_ANSI_0:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 0%%.", COMMAND_FLAG_SEEK_0);
+                break;
+            case kVK_ANSI_1:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 10%%.", COMMAND_FLAG_SEEK_10);
+                break;
+            case kVK_ANSI_2:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 20%%.", COMMAND_FLAG_SEEK_20);
+                break;
+            case kVK_ANSI_3:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 30%%.", COMMAND_FLAG_SEEK_30);
+                break;
+            case kVK_ANSI_4:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 40%%.", COMMAND_FLAG_SEEK_40);
+                break;
+            case kVK_ANSI_5:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 50%%.", COMMAND_FLAG_SEEK_50);
+                break;
+            case kVK_ANSI_6:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 60%%.", COMMAND_FLAG_SEEK_60);
+                break;
+            case kVK_ANSI_7:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 70%%.", COMMAND_FLAG_SEEK_70);
+                break;
+            case kVK_ANSI_8:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 80%%.", COMMAND_FLAG_SEEK_80);
+                break;
+            case kVK_ANSI_9:
+                TRY_SIGNAL_COMMAND_WITH_FLAG(COMMAND_SEEK, "User event: playback from 90%%.", COMMAND_FLAG_SEEK_90);
+                break;
 
             default:
                 syslog(LOG_ERR, "ERROR: Unknown hotkey id.");

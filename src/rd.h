@@ -33,7 +33,7 @@ typedef enum {
     COMMAND_HELP,
     COMMAND_TOGGLE_RANDOM, 
     COMMAND_TOGGLE_LOOP, 
-    // COMMAND_SEEK,
+    COMMAND_SEEK,
     // COMMAND_TOGGLE_QUEUE, 
     NUM_COMMANDS,
 } playback_command_t;
@@ -49,13 +49,26 @@ typedef enum {
     AUDIO_THREAD_TERMINAL_FAILURE,
 } audio_status_t;
 
-// #define FLAG_ (1u<<0)
+#define COMMAND_FLAG_NONE 0
+#define COMMAND_FLAG_SEEK_0 1
+#define COMMAND_FLAG_SEEK_10 2
+#define COMMAND_FLAG_SEEK_20 3
+#define COMMAND_FLAG_SEEK_30 4
+#define COMMAND_FLAG_SEEK_40 5
+#define COMMAND_FLAG_SEEK_50 6
+#define COMMAND_FLAG_SEEK_60 7
+#define COMMAND_FLAG_SEEK_70 8
+#define COMMAND_FLAG_SEEK_80 9
+#define COMMAND_FLAG_SEEK_90 10
+#define COMMAND_FLAG_SEEK_FORWARD 11
+#define COMMAND_FLAG_SEEK_BACKWARD 12
 
 extern struct player{
     char                path_working_dir[PATH_MAX];  
     master_status_t     master_command_execution_status; //set by the master command in question
     audio_status_t      audio_command_execution_status; //set by the audio thread NOT by the command TODO: make this better
     playback_command_t  command;
+    uint64_t            command_flag;
     pthread_mutex_t     lock;
     pthread_cond_t      cond_command;
     pthread_cond_t      cond_audio;
@@ -108,14 +121,14 @@ int master_command_kill(void);
 
 int master_command_help(void);
 
-int master_command_toggle_random(void);
 int audio_command_toggle_random(void);
 
-int master_command_toggle_loop(void);
 int audio_command_toggle_loop(void);
 
 int master_command_close(void);
 int audio_command_close(void);
+
+int audio_command_seek(void);
 
 
 #define HELP_STR \
@@ -149,11 +162,35 @@ int free_sounds(void);
                             if (rc == 0){ \
                                 pthread_cond_signal(&p.cond_command);\
                                 p.command = master_command;\
+                                p.command_flag = COMMAND_FLAG_NONE;\
                                 syslog(LOG_INFO, syslog_message);\
                                 pthread_mutex_unlock(&p.lock); \
                             } else{ \
                                 syslog(LOG_ERR, "ERROR: Monitor thread could not acquire lock.");\
                             }\
                         } while(0)
+
+#define TRY_SIGNAL_COMMAND_WITH_FLAG(master_command, syslog_message, flag)  \
+                        do { \
+                            int rc = pthread_mutex_trylock(&p.lock);\
+                            if (rc == 0){ \
+                                pthread_cond_signal(&p.cond_command);\
+                                p.command = master_command;\
+                                p.command_flag = flag;\
+                                syslog(LOG_INFO, syslog_message);\
+                                pthread_mutex_unlock(&p.lock); \
+                            } else{ \
+                                syslog(LOG_ERR, "ERROR: Monitor thread could not acquire lock.");\
+                            }\
+                        } while(0)
+
+#define ma_seek_seconds_with_error_log(psound, seconds) \
+                        do {\
+                            if (ma_sound_seek_to_second(psound, seconds)!=0){\
+                                syslog(LOG_ERR, "ERROR: Could not seek to %f seconds.", seconds);\
+                            } else{\
+                                syslog(LOG_INFO, "Seeked to %f seconds.", seconds);\
+                            }\
+                        } while(0)\
 
 #endif

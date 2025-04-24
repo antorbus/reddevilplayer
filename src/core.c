@@ -20,9 +20,12 @@ void * rd_audio_thread(void *arg) {
             pthread_mutex_unlock(&p.lock);
             return NULL;
         }
-            
+        syslog(LOG_INFO, "Audio command handler succeeded.");
         p.audio_command_execution_status = AUDIO_THREAD_DONE;
-        pthread_cond_signal(&p.cond_audio);
+        if (pthread_cond_signal(&p.cond_audio) != 0){
+            syslog(LOG_ERR, "ERROR: Could not signal p.cond_audio.");
+            //Kill?
+        }
         pthread_mutex_unlock(&p.lock);
     
     }

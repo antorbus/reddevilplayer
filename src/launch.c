@@ -7,6 +7,7 @@ struct player p = {
     .master_command_execution_status =  MASTER_OK,
     .audio_command_execution_status =   AUDIO_THREAD_DONE,
     .command =                          COMMAND_NONE,
+    .command_flag =                     COMMAND_FLAG_NONE,
     .lock =                             PTHREAD_MUTEX_INITIALIZER,
     .cond_audio =                       PTHREAD_COND_INITIALIZER,
     .cond_command =                     PTHREAD_COND_INITIALIZER,

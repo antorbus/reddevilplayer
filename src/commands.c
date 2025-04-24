@@ -212,6 +212,65 @@ int audio_command_toggle_loop(void){
 }
 
 
+int audio_command_seek(void){
+    float sound_length_seconds;
+    ma_sound *psound = &ap.sounds[ap.sound_curr_idx];
+    if (ma_sound_get_length_in_seconds(psound, &sound_length_seconds)!=0){
+        syslog(LOG_ERR, "ERROR: Could not get sound length.");
+        return 0;
+    }
+
+    float sound_playback_time_seconds;
+    if (ma_sound_get_cursor_in_seconds(psound, &sound_playback_time_seconds)){
+        syslog(LOG_ERR, "ERROR: Could not get sound cursor.");
+        return 0;
+    }
+    
+    switch (p.command_flag){ //TODO is this OK? we should not be looking at p from audio commands
+        case COMMAND_FLAG_SEEK_0:
+            ma_seek_seconds_with_error_log(psound, 0.0f);
+            break;
+        case COMMAND_FLAG_SEEK_10:
+            ma_seek_seconds_with_error_log(psound, 0.1f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_20:
+            ma_seek_seconds_with_error_log(psound, 0.2f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_30:
+            ma_seek_seconds_with_error_log(psound, 0.3f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_40:
+            ma_seek_seconds_with_error_log(psound, 0.4f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_50:
+            ma_seek_seconds_with_error_log(psound, 0.5f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_60:
+            ma_seek_seconds_with_error_log(psound, 0.6f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_70:
+            ma_seek_seconds_with_error_log(psound, 0.7f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_80:
+            ma_seek_seconds_with_error_log(psound, 0.8f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_90:
+            ma_seek_seconds_with_error_log(psound, 0.9f*sound_length_seconds);
+            break;
+        case COMMAND_FLAG_SEEK_FORWARD:
+            ma_seek_seconds_with_error_log(psound, sound_playback_time_seconds+5.0f);
+            break;
+        case COMMAND_FLAG_SEEK_BACKWARD:
+            ma_seek_seconds_with_error_log(psound, sound_playback_time_seconds-5.0f);
+            break;
+        
+        default:
+            syslog(LOG_ERR, "ERROR: Did not recognize command flag (seek).");
+            break;
+    }
+    return 0;
+}
+
 command_handler_function master_command_handler[NUM_COMMANDS] = {
     [COMMAND_NONE]  = command_none,
     [COMMAND_CLOSE] = master_command_close,
@@ -222,7 +281,8 @@ command_handler_function master_command_handler[NUM_COMMANDS] = {
     [COMMAND_KILL] = master_command_kill,
     [COMMAND_HELP] = master_command_help,
     [COMMAND_TOGGLE_RANDOM] = command_none, 
-    [COMMAND_TOGGLE_LOOP] = command_none
+    [COMMAND_TOGGLE_LOOP] = command_none,
+    [COMMAND_SEEK] = command_none,
 };
 
 
@@ -237,4 +297,5 @@ command_handler_function audio_command_handler[NUM_COMMANDS] = {
     [COMMAND_HELP] = command_none,
     [COMMAND_TOGGLE_RANDOM] = audio_command_toggle_random, 
     [COMMAND_TOGGLE_LOOP] = audio_command_toggle_loop,
+    [COMMAND_SEEK] = audio_command_seek,
 };
