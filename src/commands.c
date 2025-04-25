@@ -26,7 +26,7 @@ int audio_command_play_pause(){
                 return -1;
             }
             ap.state = STATE_PAUSED;
-            syslog(LOG_INFO, "Paused.");
+            syslog(LOG_INFO, "Paused %s.", &ap.names[PATH_MAX*ap.sound_curr_idx]);
             break;
         
         case STATE_INITIALIZED:
@@ -36,7 +36,7 @@ int audio_command_play_pause(){
                 syslog(LOG_ERR, "ERROR: Could not play.");
                 return -1;
             }
-            syslog(LOG_INFO, "Playing.");
+            syslog(LOG_INFO, "Playing %s.", &ap.names[PATH_MAX*ap.sound_curr_idx]);
             ap.state = STATE_PLAYING;
             break;
             
