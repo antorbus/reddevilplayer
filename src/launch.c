@@ -84,7 +84,7 @@ int rd_master_daemon(void){
             pthread_cond_wait(&p.cond_command, &p.lock);
         }
 
-        syslog(LOG_INFO, "Command recieved.");
+        syslog(LOG_INFO, "Command received.");
         p.master_command_execution_status = MASTER_OK; 
 
         if (master_command_handler[p.command]() != 0){   //STATUS_FAILED will return 0, means the app can continue but audio will not run
@@ -157,7 +157,8 @@ int main(){
     printf("                         \n");
     print_bindings();
     printf("Press the binding control keys + h to open the help menu.\n\n");
-
+    printf("(Developer info) To view syslog use: log stream --predicate 'process == \"RedDevilPlayer\"' --info\n\n");
+    
     if (rd_master_daemon() != 0){
         fprintf(stderr, "ERROR: Could not launch Red Devil Player daemon.\n\n");
         exit(EXIT_FAILURE);

@@ -1,4 +1,5 @@
 TODO: 
+ - open dir command sometimes freezes (gui  master)
  - fix fastforward effect
  - make finding audio files by type better
  - add audio UI instead of GUI?
