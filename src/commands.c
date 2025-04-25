@@ -157,7 +157,9 @@ int audio_command_open(){
     rewinddir(dir);
     char sound_path[PATH_MAX];
     while ((dp = readdir(dir)) != NULL) {
-        if (strstr(dp->d_name, ".mp3") != NULL){
+        if ((strstr(dp->d_name, ".mp3") != NULL) || 
+            (strstr(dp->d_name, ".wav") != NULL) ||
+            (strstr(dp->d_name, ".flac") != NULL)){
             memcpy(&ap.names[PATH_MAX*sounds_loaded], dp->d_name, PATH_MAX);
             memcpy(sound_path, p.path_working_dir, PATH_MAX);
             strcat(sound_path, dp->d_name);
