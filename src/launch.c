@@ -33,7 +33,7 @@ int rd_master_daemon(void){
     srand(time(NULL));
 
     if (is_already_running() != 0){
-        fprintf(stderr, "ERROR: failed to launch rd master daemon.\n");
+        fprintf(stderr, "ERROR: Failed to launch rd master daemon.\n");
         return -1;
     }
 

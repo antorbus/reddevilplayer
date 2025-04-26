@@ -1,4 +1,14 @@
+For minimal GUI elements: first zen mode MUST be deactivated. This is done on purpose to add friction to going out of zen mode. 
+This is also why the player is a daemon.
+
+
 TODO: 
+ - add to docs that the player is a vim-like music player for programming which allows for concentration and has no distractions
+ - zen mode on by default
+ - mood player (slow+ reverb / nightcore)
+ - change 'sound' to 'track'
+ - look at ReplayGain
+ - equalizer?
  - open dir command sometimes freezes (gui  master)
  - fix fastforward effect
  - make finding audio files by type better
@@ -18,7 +28,6 @@ TODO:
  - make open recursive
  - multiple queue things buttons to add songs to queue
  - better status bar logo
- - cool terminal ascii logo
  - show song name + playtime + random + algorithmic + liked
  - support for SID etc
  - maybe start playback from prev song

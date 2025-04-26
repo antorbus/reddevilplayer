@@ -1,17 +1,21 @@
 # //make PLATFORM=PLATFORM_DESKTOP RAYLIB_MODULE_AUDIO=FALSE RAYLIB_MODULE_MODELS=FALSE RAYLIB_CONFIG_FLAGS='-DSUPPORT_MODULE_RAUDIO=0 -DSUPPORT_MODULE_RMODELS=0'
 # //clang -c miniaudio.h -o miniaudio.o
 CC      := clang
-CFLAGS  := -Wall -g -I src -I src/metal
+CFLAGS  := -Wall -g -I src -I src/metal 
 
 LDFLAGS := -lpthread \
            -framework CoreFoundation \
            -framework Carbon \
+		   -framework OpenGL \
+		   -framework CoreVideo \
+		   -framework Cocoa \
+		   -framework IOKit \
 
 SRCDIR        := src
 METALDIR      := $(SRCDIR)/metal
 EXTERNALDIR   := external
 MINIAUDIODIR  := $(EXTERNALDIR)/miniaudio
-RAYLIBDIR     := $(EXTERNALDIR)/raylib
+RAYLIBDIR     := $(EXTERNALDIR)/raylib/src
 RAYGUIDIR     := $(EXTERNALDIR)/raygui
 
 RAYLIB_REPO   := https://github.com/raysan5/raylib.git
@@ -23,7 +27,9 @@ SRCS := $(wildcard $(SRCDIR)/*.c) \
 
 OBJS := $(SRCS:.c=.o)
 
-CFLAGS += -I$(MINIAUDIODIR)
+CFLAGS += -I$(MINIAUDIODIR) -I$(RAYLIBDIR) -I$(RAYGUIDIR)
+
+LFLAGS := $(RAYLIBDIR)/libraylib.a
 
 TARGET := RedDevilPlayer
 
@@ -32,7 +38,7 @@ TARGET := RedDevilPlayer
 all: external $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(OBJS) -o $@ $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

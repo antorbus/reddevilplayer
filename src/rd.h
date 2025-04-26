@@ -86,7 +86,7 @@ typedef enum{
 #define FLAG_LOOP   (1<<0u)
 #define FLAG_RANDOM (1<<1u)
  
-#define NUM_SOUND_PREV 10
+#define NUM_SOUND_PREV 1024
 
 extern struct audio_player {
     ma_engine           engine;
