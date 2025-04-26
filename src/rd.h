@@ -12,7 +12,7 @@
 #include <dirent.h>
 #include <assert.h>
 #include <string.h>
-#include "../external/miniaudio/miniaudio.h"
+#include "../external/miniaudio/src/miniaudio.h"
 
 int     rd_master_daemon(void);
 

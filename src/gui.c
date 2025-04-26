@@ -1,6 +1,4 @@
-#include "../external/raylib/src/raylib.h"
-#define RAYGUI_IMPLEMENTATION
-#include "../external/raygui/raygui.h"
+#include "../external/raygui/src/raygui.h"
 
 // on hotkey + t will show timestamp
 // audio timebar will look something like ====$-------------

@@ -1,7 +1,14 @@
 # //make PLATFORM=PLATFORM_DESKTOP RAYLIB_MODULE_AUDIO=FALSE RAYLIB_MODULE_MODELS=FALSE RAYLIB_CONFIG_FLAGS='-DSUPPORT_MODULE_RAUDIO=0 -DSUPPORT_MODULE_RMODELS=0'
 # //clang -c miniaudio.h -o miniaudio.o
+SRCDIR        := src
+METALDIR      := $(SRCDIR)/metal
+EXTERNALDIR   := external
+MINIAUDIODIR  := $(EXTERNALDIR)/miniaudio/src
+RAYLIBDIR     := $(EXTERNALDIR)/raylib
+RAYGUIDIR     := $(EXTERNALDIR)/raygui/src
+
 CC      := clang
-CFLAGS  := -Wall -g -I src -I src/metal 
+CFLAGS  := -Wall -g -I $(SRCDIR)
 
 LDFLAGS := -lpthread \
            -framework CoreFoundation \
@@ -11,31 +18,25 @@ LDFLAGS := -lpthread \
 		   -framework Cocoa \
 		   -framework IOKit \
 
-SRCDIR        := src
-METALDIR      := $(SRCDIR)/metal
-EXTERNALDIR   := external
-MINIAUDIODIR  := $(EXTERNALDIR)/miniaudio
-RAYLIBDIR     := $(EXTERNALDIR)/raylib/src
-RAYGUIDIR     := $(EXTERNALDIR)/raygui
 
 RAYLIB_REPO   := https://github.com/raysan5/raylib.git
 CURL          := curl -L
 
-SRCS := $(wildcard $(SRCDIR)/*.c) \
-		$(wildcard $(METALDIR)/*.c) \
-		$(MINIAUDIODIR)/miniaudio.c 
+SRCS := $(MINIAUDIODIR)/miniaudio.c \
+		$(wildcard $(SRCDIR)/*.c) \
+		$(wildcard $(METALDIR)/*.c) 		
 
 OBJS := $(SRCS:.c=.o)
 
-CFLAGS += -I$(MINIAUDIODIR) -I$(RAYLIBDIR) -I$(RAYGUIDIR)
+CFLAGS +=  -I$(METALDIR) -I$(MINIAUDIODIR) -I$(RAYLIBDIR)/src -I$(RAYGUIDIR)
 
-LFLAGS := $(RAYLIBDIR)/libraylib.a
+LFLAGS := $(RAYLIBDIR)/src/libraylib.a
 
 TARGET := RedDevilPlayer
 
 .PHONY: all clean run external
 
-all: external $(TARGET)
+all: external raylib $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) $(OBJS) -o $@ $(LDFLAGS)
@@ -49,12 +50,20 @@ external: $(RAYLIBDIR) \
           $(RAYGUIDIR)/raygui.h
 	@echo "External libraries ready."
 
+raylib:
+	$(MAKE) -C $(RAYLIBDIR)/src \
+	  PLATFORM=PLATFORM_DESKTOP \
+	  RAYLIB_MODULE_AUDIO=FALSE \
+	  RAYLIB_MODULE_MODELS=FALSE \
+	  RAYLIB_MODULE_RAYGUI=TRUE\
+	  RAYLIB_CONFIG_FLAGS="-DSUPPORT_MODULE_RAUDIO=0 -DSUPPORT_MODULE_RMODELS=0"
+
 $(EXTERNALDIR):
 	@mkdir -p $@
 
 $(RAYLIBDIR): | $(EXTERNALDIR)
-	@git clone --depth 1 $(RAYLIB_REPO) $@
-
+	@git clone --depth 1 $(RAYLIB_REPO) $@ \
+	
 $(MINIAUDIODIR):
 	@mkdir -p $@
 

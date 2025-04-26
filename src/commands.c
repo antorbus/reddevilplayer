@@ -163,7 +163,8 @@ int audio_command_open(){
             memcpy(&ap.names[PATH_MAX*sounds_loaded], dp->d_name, PATH_MAX);
             memcpy(sound_path, p.path_working_dir, PATH_MAX);
             strcat(sound_path, dp->d_name);
-            if (ma_sound_init_from_file(&ap.engine, sound_path, 0, NULL, NULL, &ap.sounds[sounds_loaded]) != 0){
+            //try MA_SOUND_FLAG_ASYNC | MA_SOUND_FLAG_STREAM
+            if (ma_sound_init_from_file(&ap.engine, sound_path,  0, NULL, NULL, &ap.sounds[sounds_loaded]) != 0){
                 syslog(LOG_ERR, "ERROR: Could not initialize sound %s.", sound_path);
                 closedir(dir);
                 return -1;
