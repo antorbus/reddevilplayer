@@ -2,6 +2,12 @@ For minimal GUI elements: first zen mode MUST be deactivated. This is done on pu
 This is also why the player is a daemon.
 
 
+fix this
+ RAYLIB_MODULE_AUDIO=FALSE \
+	  RAYLIB_MODULE_MODELS=FALSE \
+	  RAYLIB_MODULE_RAYGUI=TRUE\
+	  RAYLIB_CONFIG_FLAGS="-DSUPPORT_MODULE_RAUDIO=0 -DSUPPORT_MODULE_RMODELS=0"
+
 TODO: 
  - add to docs that the player is a vim-like music player for programming which allows for concentration and has no distractions
  - zen mode on by default
@@ -10,14 +16,14 @@ TODO:
  - look at ReplayGain
  - equalizer?
  - open dir command sometimes freezes (gui  master)
- - fix fastforward effect
+ - fix fastforward effect -->solve with approx ma_dr_mp3_bind_seek_table
  - make finding audio files by type better
  - add audio UI instead of GUI?
  - buffer commads instead of losing them if processing is happening
  - port as much code to multiplatform
  - mention vim-like in docs
  - add sleep to daemon for battery saving 
- - execution statis set by the audio thread NOT by the command make this by command
+ - execution states set by the audio thread NOT by the command make this by command
  - clear error handling in metal_handlers
  - add error checks around pthread_mutex_lock because they can return error codes
  - switch to launchd

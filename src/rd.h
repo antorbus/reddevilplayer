@@ -156,6 +156,8 @@ void platform_specific_destroy(void);
 void sound_end_callback(void *p_user_data, ma_sound *p_sound);
 int free_sounds(void);
 
+int gui_show_help_menu(void);
+
 #define TRY_SIGNAL_COMMAND(master_command, syslog_message)  \
                         do { \
                             int rc = pthread_mutex_trylock(&p.lock);\

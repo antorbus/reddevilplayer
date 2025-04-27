@@ -1,4 +1,5 @@
-#include "../external/raygui/src/raygui.h"
+#include "rd.h"
+#include <SDL3/SDL.h>
 
 // on hotkey + t will show timestamp
 // audio timebar will look something like ====$-------------
@@ -14,3 +15,10 @@
 // on hotkey + q will play from queue 
 
 // on hoteky + o will have the option to also open a queue
+
+// on hotkey + h will show the help menu
+
+int gui_show_help_menu(void){
+    
+    return 0;
+}

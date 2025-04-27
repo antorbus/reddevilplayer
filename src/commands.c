@@ -199,7 +199,7 @@ int master_command_kill(){
 
 int master_command_help(){
    //TODO raygui
-    
+    gui_show_help_menu();
     return 0;
 }
 
