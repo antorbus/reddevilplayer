@@ -19,12 +19,8 @@ SRCS := $(MINIAUDIODIR)/miniaudio.c \
 		$(wildcard $(METALDIR)/*.c) 		
 
 OBJS := $(SRCS:.c=.o)
-
-CFLAGS +=  -I$(METALDIR) -I$(MINIAUDIODIR)
-
-SDL3_PREFIX   := $(shell brew --prefix sdl3)
-CFLAGS  += -I$(SDL3_PREFIX)/include
-LDFLAGS += -L$(SDL3_PREFIX)/lib -lSDL3
+CFLAGS +=  -I$(METALDIR) -I$(MINIAUDIODIR) -I/opt/homebrew/include 
+LDFLAGS += -L/opt/homebrew/lib -lSDL2
 
 TARGET := RedDevilPlayer
 
