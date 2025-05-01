@@ -3,12 +3,10 @@ This is also why the player is a daemon.
 
 
 fix this
- RAYLIB_MODULE_AUDIO=FALSE \
-	  RAYLIB_MODULE_MODELS=FALSE \
-	  RAYLIB_MODULE_RAYGUI=TRUE\
-	  RAYLIB_CONFIG_FLAGS="-DSUPPORT_MODULE_RAUDIO=0 -DSUPPORT_MODULE_RMODELS=0"
+compile SDL without audio
 
 TODO: 
+ - add thread on syslog message
  - add to docs that the player is a vim-like music player for programming which allows for concentration and has no distractions
  - zen mode on by default
  - mood player (slow+ reverb / nightcore)

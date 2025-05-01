@@ -5,31 +5,34 @@
 struct player p = {
     .path_working_dir =                 {0},
     .master_command_execution_status =  MASTER_OK,
-    .audio_command_execution_status =   AUDIO_THREAD_DONE,
     .command =                          COMMAND_NONE,
     .command_flag =                     COMMAND_FLAG_NONE,
     .lock =                             PTHREAD_MUTEX_INITIALIZER,
-    .cond_audio =                       PTHREAD_COND_INITIALIZER,
-    .cond_command =                     PTHREAD_COND_INITIALIZER,
+    .command_arrived =                  PTHREAD_COND_INITIALIZER,
 };
 
 struct audio_player ap = {  
     .engine                     = {},  
     .num_sounds                 = 0, 
+    .names                      = NULL,
     .sound_prev_idx             = {[0 ... NUM_SOUND_PREV-1] = -1},
     .sound_curr_idx             = -1,
     .sounds                     = NULL,       
-    .flags                      = 0, 
+    .flags                      = PLAYER_FLAG_NONE, 
     .state                      = STATE_UNINITIALIZED,
-    
+    .command                    = COMMAND_NONE,
+    .command_flag               = COMMAND_FLAG_NONE,
+    .command_buffer             = { .commands =             {COMMAND_NONE},
+                                    .command_flags =        {COMMAND_FLAG_NONE},
+                                    .command_queue_len =    0,
+                                    .lock =                 PTHREAD_MUTEX_INITIALIZER,
+                                    .command_arrived =      PTHREAD_COND_INITIALIZER}
 };
 
 pthread_t audio_thread          = NULL;
 pthread_t key_monitor_thread    = NULL;
 
-
-int rd_master_daemon(void){
-
+int initialize(void){
     srand(time(NULL));
 
     if (is_already_running() != 0){
@@ -46,7 +49,7 @@ int rd_master_daemon(void){
     syslog(LOG_INFO, "Red Devil Daemon started.");
     
 
-    signal(SIGINT,   terminate);
+    signal(SIGINT, terminate);
     signal(SIGTERM, terminate);
 
     if(ma_engine_init(NULL, &ap.engine)!=0){
@@ -74,14 +77,25 @@ int rd_master_daemon(void){
         return -1;
     }
 
-    syslog(LOG_INFO, "...");
-    for (;;) {
+    return 0;
+}
+
+int rd_master_daemon(void){
+
+    if (initialize() != 0){
+        syslog(LOG_ERR, "ERROR: could not initialize master thread.");
+        terminate(SIGTERM);
+        return -1;
+    }
+    
+
+    syslog(LOG_INFO, "Starting master thread loop.");
+    for (;;) {        
         pthread_mutex_lock(&p.lock);
 
-        syslog(LOG_INFO, "Waiting for command.");
-
         while (p.command == COMMAND_NONE){
-            pthread_cond_wait(&p.cond_command, &p.lock);
+            syslog(LOG_INFO, "Waiting for command.");
+            pthread_cond_wait(&p.command_arrived, &p.lock); //wait until we recieve a command
         }
 
         syslog(LOG_INFO, "Command received.");
@@ -93,28 +107,29 @@ int rd_master_daemon(void){
 
         if (p.master_command_execution_status == MASTER_FAILED){
             syslog(LOG_ERR, "ERROR: master_command_execution_status failed. Audio command will not run.");
-        } 
-        if (p.master_command_execution_status == MASTER_OK){ //aka is master_command_execution_status wasnt changed by command 
-            p.audio_command_execution_status = AUDIO_THREAD_WAITING;
-            pthread_cond_signal(&p.cond_audio);
-            syslog(LOG_INFO, "Waiting for audio status.");
-        }
-
-        //audio thread will acquire lock, set status to Done once its done
-       
-        while (p.audio_command_execution_status == AUDIO_THREAD_WAITING){
-            pthread_cond_wait(&p.cond_audio, &p.lock);
-        }
-        if (p.audio_command_execution_status == AUDIO_THREAD_DONE){
-            syslog(LOG_INFO, "Audio done.");
-        }
-        if (p.audio_command_execution_status == AUDIO_THREAD_TERMINAL_FAILURE){
-            terminate(SIGTERM);
+        } else if (p.master_command_execution_status == MASTER_OK){ //aka is master_command_execution_status wasnt changed by command TODO we could remove this
+            if (pthread_mutex_trylock(&ap.command_buffer.lock) == 0){
+                if (ap.command_buffer.command_queue_len < SIZE_COMMAND_QUEUE -1){
+                     //fill the commandbuffer of the audio thread
+                    ap.command_buffer.commands[ap.command_buffer.command_queue_len] = p.command;
+                    ap.command_buffer.command_flags[ap.command_buffer.command_queue_len] = p.command_flag;
+                    if (ap.command_buffer.command_queue_len < SIZE_COMMAND_QUEUE -1){
+                        ap.command_buffer.command_queue_len++;
+                    }
+                } else {
+                    syslog(LOG_ERR, "ERROR: audio buffer full.");
+                }
+                pthread_cond_signal(&ap.command_buffer.command_arrived);
+                pthread_mutex_unlock(&ap.command_buffer.lock);
+            } else{
+                syslog(LOG_ERR, "ERROR: could not aquire audio command buffer lock.");
+            }
         }
 
         p.command = COMMAND_NONE;
+        p.command_flag = COMMAND_FLAG_NONE;
+
         pthread_mutex_unlock(&p.lock);
-        syslog(LOG_INFO, "...");
     }
 
     return 0;

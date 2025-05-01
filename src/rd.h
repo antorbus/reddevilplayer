@@ -44,34 +44,30 @@ typedef enum {
 } master_status_t;
 
 typedef enum {
-    AUDIO_THREAD_DONE = 0,
-    AUDIO_THREAD_WAITING,     
-    AUDIO_THREAD_TERMINAL_FAILURE,
-} audio_status_t;
+    COMMAND_FLAG_NONE = 0,     
+    COMMAND_FLAG_SEEK_0,
+    COMMAND_FLAG_SEEK_10,
+    COMMAND_FLAG_SEEK_20,
+    COMMAND_FLAG_SEEK_30,
+    COMMAND_FLAG_SEEK_40,
+    COMMAND_FLAG_SEEK_50,
+    COMMAND_FLAG_SEEK_60,
+    COMMAND_FLAG_SEEK_70,
+    COMMAND_FLAG_SEEK_80,
+    COMMAND_FLAG_SEEK_90,
+    COMMAND_FLAG_SEEK_FORWARD,
+    COMMAND_FLAG_SEEK_BACKWARD,
+} playback_command_flag_t;
 
-#define COMMAND_FLAG_NONE 0
-#define COMMAND_FLAG_SEEK_0 1
-#define COMMAND_FLAG_SEEK_10 2
-#define COMMAND_FLAG_SEEK_20 3
-#define COMMAND_FLAG_SEEK_30 4
-#define COMMAND_FLAG_SEEK_40 5
-#define COMMAND_FLAG_SEEK_50 6
-#define COMMAND_FLAG_SEEK_60 7
-#define COMMAND_FLAG_SEEK_70 8
-#define COMMAND_FLAG_SEEK_80 9
-#define COMMAND_FLAG_SEEK_90 10
-#define COMMAND_FLAG_SEEK_FORWARD 11
-#define COMMAND_FLAG_SEEK_BACKWARD 12
+
 
 extern struct player{
-    char                path_working_dir[PATH_MAX];  
-    master_status_t     master_command_execution_status; //set by the master command in question
-    audio_status_t      audio_command_execution_status; //set by the audio thread NOT by the command TODO: make this better
-    playback_command_t  command;
-    uint64_t            command_flag;
-    pthread_mutex_t     lock;
-    pthread_cond_t      cond_command;
-    pthread_cond_t      cond_audio;
+    char                    path_working_dir[PATH_MAX];  
+    master_status_t         master_command_execution_status; //set by the master command in question
+    playback_command_t      command;
+    playback_command_flag_t command_flag;
+    pthread_cond_t          command_arrived;
+    pthread_mutex_t         lock;
 } p;
 
 
@@ -83,20 +79,34 @@ typedef enum{
     STATE_PLAYING,
 } audio_player_state;
 
-#define FLAG_LOOP   (1<<0u)
-#define FLAG_RANDOM (1<<1u)
+#define PLAYER_FLAG_NONE   0
+#define PLAYER_FLAG_LOOP   (1<<0u)
+#define PLAYER_FLAG_RANDOM (1<<1u)
  
 #define NUM_SOUND_PREV 1024
 
+
+#define SIZE_COMMAND_QUEUE 1024
+struct command_queue{
+    playback_command_t      commands[SIZE_COMMAND_QUEUE];
+    playback_command_flag_t command_flags[SIZE_COMMAND_QUEUE];
+    uint64_t                command_queue_len;
+    pthread_cond_t          command_arrived;
+    pthread_mutex_t         lock;
+};
+
 extern struct audio_player {
-    ma_engine           engine;
-    int                 num_sounds;
-    char                *names; //PATH_MAX x num_sounds
-    int                 sound_prev_idx[NUM_SOUND_PREV];
-    int                 sound_curr_idx;
-    ma_sound            *sounds;
-    uint64_t            flags;
-    audio_player_state  state;
+    ma_engine               engine;
+    int                     num_sounds;
+    char                    *names; //PATH_MAX x num_sounds
+    int                     sound_prev_idx[NUM_SOUND_PREV];
+    int                     sound_curr_idx;
+    ma_sound                *sounds;
+    playback_command_flag_t flags;
+    audio_player_state      state;
+    playback_command_t      command;
+    playback_command_flag_t command_flag;
+    struct command_queue    command_buffer;
 } ap;
 
 typedef int (*command_handler_function)(void);
@@ -108,10 +118,8 @@ int command_none(void);
 int master_command_play_pause(void);
 int audio_command_play_pause(void);
 
-int master_command_next(void);
 int audio_command_next(void);
 
-int master_command_prev(void);
 int audio_command_prev(void);
 
 int master_command_open(void);
@@ -157,42 +165,5 @@ void sound_end_callback(void *p_user_data, ma_sound *p_sound);
 int free_sounds(void);
 
 int gui_show_help_menu(void);
-
-#define TRY_SIGNAL_COMMAND(master_command, syslog_message)  \
-                        do { \
-                            int rc = pthread_mutex_trylock(&p.lock);\
-                            if (rc == 0){ \
-                                pthread_cond_signal(&p.cond_command);\
-                                p.command = master_command;\
-                                p.command_flag = COMMAND_FLAG_NONE;\
-                                syslog(LOG_INFO, syslog_message);\
-                                pthread_mutex_unlock(&p.lock); \
-                            } else{ \
-                                syslog(LOG_ERR, "ERROR: Monitor thread could not acquire lock.");\
-                            }\
-                        } while(0)
-
-#define TRY_SIGNAL_COMMAND_WITH_FLAG(master_command, syslog_message, flag)  \
-                        do { \
-                            int rc = pthread_mutex_trylock(&p.lock);\
-                            if (rc == 0){ \
-                                pthread_cond_signal(&p.cond_command);\
-                                p.command = master_command;\
-                                p.command_flag = flag;\
-                                syslog(LOG_INFO, syslog_message);\
-                                pthread_mutex_unlock(&p.lock); \
-                            } else{ \
-                                syslog(LOG_ERR, "ERROR: Monitor thread could not acquire lock.");\
-                            }\
-                        } while(0)
-
-#define ma_seek_seconds_with_error_log(psound, seconds) \
-                        do {\
-                            if (ma_sound_seek_to_second(psound, seconds)!=0){\
-                                syslog(LOG_ERR, "ERROR: Could not seek to %f seconds.", seconds);\
-                            } else{\
-                                syslog(LOG_INFO, "Seeked to %f seconds.", seconds);\
-                            }\
-                        } while(0)\
 
 #endif
