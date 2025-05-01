@@ -154,7 +154,8 @@ int main(){
     printf("                         \n");
     printf("                         \n");
     print_bindings();
-    printf("Press the binding control keys + h to open the help menu.\n\n");
+    printf("If GUI plugin is on, press the binding control keys + h to open the help menu.\n\n");
+    printf("Activated plugs:\n\tGUI plugin: %d\n\n", PLUGIN_GUI);
     printf("(Developer info) To view syslog use: log stream --predicate 'process == \"RedDevilPlayer\"' --info\n\n");
     
     if (rd_master_daemon() != 0){

@@ -1,5 +1,6 @@
 SRCDIR        := src
 METALDIR      := $(SRCDIR)/metal
+PLUGINSDIR	  := $(SRCDIR)/plugins
 EXTERNALDIR   := external
 MINIAUDIODIR  := $(EXTERNALDIR)/miniaudio/src
 
@@ -16,10 +17,11 @@ CURL          := curl -L
 
 SRCS := $(MINIAUDIODIR)/miniaudio.c \
 		$(wildcard $(SRCDIR)/*.c) \
-		$(wildcard $(METALDIR)/*.c) 		
+		$(wildcard $(METALDIR)/*.c) \
+		$(wildcard $(PLUGINSDIR)/*.c)
 
 OBJS := $(SRCS:.c=.o)
-CFLAGS +=  -I$(METALDIR) -I$(MINIAUDIODIR) -I/opt/homebrew/include 
+CFLAGS +=  -I$(METALDIR) -I$(MINIAUDIODIR) -I$(PLUGINSDIR) -I/opt/homebrew/include 
 LDFLAGS += -L/opt/homebrew/lib -lSDL2
 
 TARGET := RedDevilPlayer

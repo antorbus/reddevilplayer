@@ -8,7 +8,7 @@ command_handler_function master_command_handler[NUM_COMMANDS] = {
     [COMMAND_PREV] = command_none,       
     [COMMAND_OPEN] = master_command_open, 
     [COMMAND_KILL] = master_command_kill,
-    [COMMAND_HELP] = master_command_help,
+    [COMMAND_HELP] = command_none,
     [COMMAND_TOGGLE_RANDOM] = command_none, 
     [COMMAND_TOGGLE_LOOP] = command_none,
     [COMMAND_SEEK] = command_none,
@@ -36,9 +36,4 @@ int master_command_open(){
 
 int master_command_kill(){
     return -1;
-}
-
-int master_command_help(){
-    gui_show_help_menu();
-    return 0;
 }

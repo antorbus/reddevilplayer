@@ -13,6 +13,8 @@
 #include <assert.h>
 #include <string.h>
 
+#define PLUGIN_GUI 1
+
 int     rd_master_daemon(void);
 void*   rd_audio_thread(void *arg);
 void*   rd_key_monitor_thread(void *arg);
@@ -89,9 +91,7 @@ int command_none(void);
 
 int master_command_open(void);
 int master_command_kill(void);
-int master_command_help(void);
 int master_command_close(void);
-
 
 
 #define HELP_STR \
@@ -112,8 +112,6 @@ int master_command_close(void);
 
 extern pthread_t        audio_thread;
 extern pthread_t        key_monitor_thread;
-
-int gui_show_help_menu(void);
 
 int choose_directory(char *path, size_t max_len);
 void platform_specific_destroy(void);
