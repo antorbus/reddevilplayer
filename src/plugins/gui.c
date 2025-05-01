@@ -1,6 +1,5 @@
 #include "plugins.h"
-// #include <SDL2/SDL.h>
-
+#if PLUGIN_GUI ==1
 
 
 // on hotkey + t will show timestamp
@@ -23,3 +22,4 @@
 int gui_show_help_menu(void) {
     return 0;
 }
+#endif
