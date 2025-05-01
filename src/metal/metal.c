@@ -5,7 +5,7 @@ CFMachPortRef       metal_tap;
 CFRunLoopSourceRef  metal_g_run_loop_src;
 
 void * rd_key_monitor_thread(void *arg){
-
+    pthread_setname_np("RDkeymonitorthread");
     metal_tap = CGEventTapCreate(
         kCGSessionEventTap, kCGHeadInsertEventTap,
         kCGEventTapOptionDefault,

@@ -187,7 +187,6 @@ int master_command_kill(){
 }
 
 int master_command_help(){
-   //TODO raygui
     gui_show_help_menu();
     return 0;
 }
@@ -195,13 +194,13 @@ int master_command_help(){
 
 int audio_command_toggle_random(){
     ap.flags ^= PLAYER_FLAG_RANDOM;
-    syslog(LOG_INFO, "(AUDIO THREAD) Audio player random flag set to %d.", ap.flags & PLAYER_FLAG_RANDOM);
+    syslog(LOG_INFO, "(AUDIO THREAD) Audio player random flag set to %d.", ((ap.flags & PLAYER_FLAG_RANDOM)!=0));
     return 0;
 }
 
 int audio_command_toggle_loop(void){
     ap.flags ^= PLAYER_FLAG_LOOP;
-    syslog(LOG_INFO, "(AUDIO THREAD) Audio player loop flag set to %d.", ap.flags & PLAYER_FLAG_LOOP);
+    syslog(LOG_INFO, "(AUDIO THREAD) Audio player loop flag set to %d.", ((ap.flags & PLAYER_FLAG_LOOP)!=0));
     return 0;
 }
 
@@ -220,7 +219,7 @@ int audio_command_seek(void){
         return 0;
     }
     float seconds = 0.0f;
-    switch (ap.command_flag){ //TODO is this OK? we should not be looking at p from audio commands
+    switch (ap.command_flag){
         case COMMAND_FLAG_SEEK_0:
             seconds = 0.0f;
             break;

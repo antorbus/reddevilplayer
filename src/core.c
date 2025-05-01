@@ -1,7 +1,7 @@
 #include "rd.h"
 
 void * rd_audio_thread(void *arg) {
-
+    pthread_setname_np("RDaudiothread");
     while (1) {
         syslog(LOG_INFO, "(AUDIO THREAD) Waiting for audio command.");
         while (ap.command == COMMAND_NONE){
