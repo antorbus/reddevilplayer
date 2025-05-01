@@ -179,6 +179,7 @@ int audio_command_open(){
     }
     audio_player.state = STATE_INITIALIZED;
     syslog(LOG_INFO, "(AUDIO THREAD) Successfully loaded all %d sounds.", sounds_loaded);
+    audio_command_play_pause();
     return 0;
 }
 
