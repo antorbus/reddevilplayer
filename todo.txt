@@ -17,7 +17,7 @@ TODO:
  - fix fastforward effect -->solve with approx ma_dr_mp3_bind_seek_table
  - make finding audio files by type better
  - add audio UI instead of GUI?
- - buffer commads instead of losing them if processing is happening
+ - buffer commads instead of losing them if processing is happening for gui
  - port as much code to multiplatform
  - mention vim-like in docs
  - add sleep to daemon for battery saving 
