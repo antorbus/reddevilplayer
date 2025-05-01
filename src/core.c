@@ -23,7 +23,7 @@ void * rd_audio_thread(void *arg) {
             }
             pthread_mutex_unlock(&ap.command_buffer.lock);
         }
-        syslog(LOG_INFO, "(AUDIO THREAD) Audio command recieved.");
+        syslog(LOG_INFO, "(AUDIO THREAD) Audio command received.");
         if (audio_command_handler[ap.command]() != 0){
             syslog(LOG_ERR, "(AUDIO THREAD) ERROR: Audio command handler failed.");
             terminate(SIGTERM);

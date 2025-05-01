@@ -95,7 +95,7 @@ int rd_master_daemon(void){
 
         while (p.command == COMMAND_NONE){
             syslog(LOG_INFO, "Waiting for command.");
-            pthread_cond_wait(&p.command_arrived, &p.lock); //wait until we recieve a command
+            pthread_cond_wait(&p.command_arrived, &p.lock); //wait until we receive a command
         }
 
         syslog(LOG_INFO, "Command received.");
