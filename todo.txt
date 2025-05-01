@@ -6,6 +6,9 @@ fix this
 compile SDL without audio
 
 TODO: 
+ - make player start playing right after open
+ - addm "emac-like" compilation so that you can compile without gui + plugins 
+ - fix key log thread crashing after lldb
  - add thread on syslog message
  - add to docs that the player is a vim-like music player for programming which allows for concentration and has no distractions
  - zen mode on by default

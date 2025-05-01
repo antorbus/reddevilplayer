@@ -1,5 +1,7 @@
 #include "rd.h"
-#include <SDL3/SDL.h>
+// #include <SDL2/SDL.h>
+
+
 
 // on hotkey + t will show timestamp
 // audio timebar will look something like ====$-------------
@@ -18,7 +20,6 @@
 
 // on hotkey + h will show the help menu
 
-int gui_show_help_menu(void){
-    
+int gui_show_help_menu(void) {
     return 0;
 }
