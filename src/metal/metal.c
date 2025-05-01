@@ -212,3 +212,8 @@ int choose_directory(char *path, size_t max_len) {
 
     return path[0] == '\0';
 }
+
+void print_bindings(void){
+    printf("MacOS binding control keys: control + option + command\n");
+    return;
+}

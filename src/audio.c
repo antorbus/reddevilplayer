@@ -1,4 +1,22 @@
-#include "rd.h"
+#include "audio.h"
+
+struct audio_player_context audio_player = {  
+    .engine                     = {},  
+    .num_sounds                 = 0, 
+    .names                      = NULL,
+    .sound_prev_idx             = {[0 ... NUM_SOUND_PREV-1] = -1},
+    .sound_curr_idx             = -1,
+    .sounds                     = NULL,       
+    .flags                      = PLAYER_FLAG_NONE, 
+    .state                      = STATE_UNINITIALIZED,
+    .command                    = COMMAND_NONE,
+    .command_flag               = COMMAND_FLAG_NONE,
+    .command_buffer             = { .commands =             {COMMAND_NONE},
+                                    .command_flags =        {COMMAND_FLAG_NONE},
+                                    .command_queue_len =    0,
+                                    .lock =                 PTHREAD_MUTEX_INITIALIZER,
+                                    .command_arrived =      PTHREAD_COND_INITIALIZER}
+};
 
 void * rd_audio_thread(void *arg) {
     pthread_setname_np("RDaudiothread");
@@ -19,6 +37,7 @@ void * rd_audio_thread(void *arg) {
                 syslog(LOG_INFO, "(AUDIO THREAD) Audio command size is %llu.", audio_player.command_buffer.command_queue_len);
 
             } else{
+                syslog(LOG_INFO, "(AUDIO THREAD) No commands.");
                 pthread_cond_wait(&audio_player.command_buffer.command_arrived, &audio_player.command_buffer.lock);
             }
             pthread_mutex_unlock(&audio_player.command_buffer.lock);
@@ -35,28 +54,6 @@ void * rd_audio_thread(void *arg) {
     }
 
     return NULL;
-}
-
-void terminate(int sig){
-    if (!((sig == SIGINT)||(sig == SIGTERM)))
-        return;
-    syslog(LOG_INFO, "Terminating.");
-
-    audio_player_destroy();
-
-    platform_specific_destroy();
-
-    pthread_cond_destroy(&master_command_context.command_arrived);
-    pthread_mutex_destroy(&master_command_context.lock);
-
-    closelog();
-
-    exit(0);
-}
-
-void print_bindings(void){
-    printf("MacOS binding control keys: control + option + command\n");
-    return;
 }
 
 void sound_end_callback(void *p_user_data, ma_sound *p_sound){

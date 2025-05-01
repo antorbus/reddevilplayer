@@ -1,5 +1,5 @@
 #include "rd.h"
-
+#include "audio.h"
 #define PIDFILE "/tmp/RedDevilPlayer"
 
 struct playback_command_context master_command_context = {
@@ -11,23 +11,6 @@ struct playback_command_context master_command_context = {
     .command_arrived =                  PTHREAD_COND_INITIALIZER,
 };
 
-struct audio_player_context audio_player = {  
-    .engine                     = {},  
-    .num_sounds                 = 0, 
-    .names                      = NULL,
-    .sound_prev_idx             = {[0 ... NUM_SOUND_PREV-1] = -1},
-    .sound_curr_idx             = -1,
-    .sounds                     = NULL,       
-    .flags                      = PLAYER_FLAG_NONE, 
-    .state                      = STATE_UNINITIALIZED,
-    .command                    = COMMAND_NONE,
-    .command_flag               = COMMAND_FLAG_NONE,
-    .command_buffer             = { .commands =             {COMMAND_NONE},
-                                    .command_flags =        {COMMAND_FLAG_NONE},
-                                    .command_queue_len =    0,
-                                    .lock =                 PTHREAD_MUTEX_INITIALIZER,
-                                    .command_arrived =      PTHREAD_COND_INITIALIZER}
-};
 
 pthread_t audio_thread          = NULL;
 pthread_t key_monitor_thread    = NULL;
@@ -201,4 +184,21 @@ int is_already_running(void){
     ftruncate(pidfile_fd, 0);
     dprintf(pidfile_fd, "%ld\n", (long)getpid());
     return 0;
+}
+
+void terminate(int sig){
+    if (!((sig == SIGINT)||(sig == SIGTERM)))
+        return;
+    syslog(LOG_INFO, "Terminating.");
+
+    audio_player_destroy();
+
+    platform_specific_destroy();
+
+    pthread_cond_destroy(&master_command_context.command_arrived);
+    pthread_mutex_destroy(&master_command_context.lock);
+
+    closelog();
+
+    exit(0);
 }

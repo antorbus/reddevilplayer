@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef METAL_H
+#define METAL_H
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <Carbon/Carbon.h>

@@ -12,10 +12,8 @@
 #include <dirent.h>
 #include <assert.h>
 #include <string.h>
-#include "../external/miniaudio/src/miniaudio.h"
 
 int     rd_master_daemon(void);
-
 void*   rd_audio_thread(void *arg);
 void*   rd_key_monitor_thread(void *arg);
 void    terminate(int sig);
@@ -39,11 +37,6 @@ typedef enum {
 } playback_command_t;
 
 typedef enum {
-    MASTER_OK = 0,
-    MASTER_FAILED,
-} master_status_t;
-
-typedef enum {
     COMMAND_FLAG_NONE = 0,     
     COMMAND_FLAG_SEEK_0,
     COMMAND_FLAG_SEEK_10,
@@ -59,7 +52,10 @@ typedef enum {
     COMMAND_FLAG_SEEK_BACKWARD,
 } playback_command_flag_t;
 
-
+typedef enum {
+    MASTER_OK = 0,
+    MASTER_FAILED,
+} master_status_t;
 
 extern struct playback_command_context{
     char                    path_working_dir[PATH_MAX];  
@@ -71,21 +67,10 @@ extern struct playback_command_context{
 } master_command_context;
 
 
-typedef enum{
-    STATE_UNINITIALIZED = 0,
-    STATE_INITIALIZED,
-    STATE_DONE,
-    STATE_PAUSED,
-    STATE_PLAYING,
-} audio_player_state;
-
 #define PLAYER_FLAG_NONE   0
 #define PLAYER_FLAG_LOOP   (1<<0u)
 #define PLAYER_FLAG_RANDOM (1<<1u)
  
-#define NUM_SOUND_PREV 1024
-
-
 #define SIZE_COMMAND_QUEUE 1024
 struct command_queue{
     playback_command_t      commands[SIZE_COMMAND_QUEUE];
@@ -95,19 +80,6 @@ struct command_queue{
     pthread_mutex_t         lock;
 };
 
-extern struct audio_player_context {
-    ma_engine               engine;
-    int                     num_sounds;
-    char                    *names; //PATH_MAX x num_sounds
-    int                     sound_prev_idx[NUM_SOUND_PREV];
-    int                     sound_curr_idx;
-    ma_sound                *sounds;
-    playback_command_flag_t flags;
-    audio_player_state      state;
-    playback_command_t      command;
-    playback_command_flag_t command_flag;
-    struct command_queue    command_buffer;
-} audio_player;
 
 typedef int (*command_handler_function)(void);
 extern command_handler_function master_command_handler[NUM_COMMANDS];
@@ -115,28 +87,11 @@ extern command_handler_function audio_command_handler[NUM_COMMANDS];
 
 int command_none(void);
 
-int master_command_play_pause(void);
-int audio_command_play_pause(void);
-
-int audio_command_next(void);
-
-int audio_command_prev(void);
-
 int master_command_open(void);
-int audio_command_open(void);
-
 int master_command_kill(void);
-
 int master_command_help(void);
-
-int audio_command_toggle_random(void);
-
-int audio_command_toggle_loop(void);
-
 int master_command_close(void);
-int audio_command_close(void);
 
-int audio_command_seek(void);
 
 
 #define HELP_STR \
@@ -158,12 +113,9 @@ int audio_command_seek(void);
 extern pthread_t        audio_thread;
 extern pthread_t        key_monitor_thread;
 
-int choose_directory(char *path, size_t max_len);
-void audio_player_destroy(void);
-void platform_specific_destroy(void);
-void sound_end_callback(void *p_user_data, ma_sound *p_sound);
-int free_sounds(void);
-
 int gui_show_help_menu(void);
+
+int choose_directory(char *path, size_t max_len);
+void platform_specific_destroy(void);
 
 #endif
