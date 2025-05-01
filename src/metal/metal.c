@@ -172,13 +172,13 @@ CGEventRef keypress_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef
                     syslog(LOG_ERR, "ERROR: Unknown hotkey id.");
                     break;
             }
-            int rc = pthread_mutex_trylock(&p.lock);
+            int rc = pthread_mutex_trylock(&master_command_context.lock);
             if (rc == 0){ 
-                p.command = master_command;
-                p.command_flag = command_flag;
-                pthread_cond_signal(&p.command_arrived);
+                master_command_context.command = master_command;
+                master_command_context.command_flag = command_flag;
+                pthread_cond_signal(&master_command_context.command_arrived);
                 syslog(LOG_INFO, "%s", syslog_message);
-                pthread_mutex_unlock(&p.lock); 
+                pthread_mutex_unlock(&master_command_context.lock); 
             } else{ 
                 syslog(LOG_ERR, "ERROR: Monitor thread could not acquire lock.");
             }

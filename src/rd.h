@@ -61,14 +61,14 @@ typedef enum {
 
 
 
-extern struct player{
+extern struct playback_command_context{
     char                    path_working_dir[PATH_MAX];  
     master_status_t         master_command_execution_status; //set by the master command in question
     playback_command_t      command;
     playback_command_flag_t command_flag;
     pthread_cond_t          command_arrived;
     pthread_mutex_t         lock;
-} p;
+} master_command_context;
 
 
 typedef enum{
@@ -95,7 +95,7 @@ struct command_queue{
     pthread_mutex_t         lock;
 };
 
-extern struct audio_player {
+extern struct audio_player_context {
     ma_engine               engine;
     int                     num_sounds;
     char                    *names; //PATH_MAX x num_sounds
@@ -107,7 +107,7 @@ extern struct audio_player {
     playback_command_t      command;
     playback_command_flag_t command_flag;
     struct command_queue    command_buffer;
-} ap;
+} audio_player;
 
 typedef int (*command_handler_function)(void);
 extern command_handler_function master_command_handler[NUM_COMMANDS];

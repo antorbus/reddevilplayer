@@ -2,7 +2,7 @@
 
 #define PIDFILE "/tmp/RedDevilPlayer"
 
-struct player p = {
+struct playback_command_context master_command_context = {
     .path_working_dir =                 {0},
     .master_command_execution_status =  MASTER_OK,
     .command =                          COMMAND_NONE,
@@ -11,7 +11,7 @@ struct player p = {
     .command_arrived =                  PTHREAD_COND_INITIALIZER,
 };
 
-struct audio_player ap = {  
+struct audio_player_context audio_player = {  
     .engine                     = {},  
     .num_sounds                 = 0, 
     .names                      = NULL,
@@ -52,7 +52,7 @@ int initialize(void){
     signal(SIGINT, terminate);
     signal(SIGTERM, terminate);
 
-    if(ma_engine_init(NULL, &ap.engine)!=0){
+    if(ma_engine_init(NULL, &audio_player.engine)!=0){
         syslog(LOG_ERR, "ERROR: Could not initialize miniaudio engine.");
         return -1;
     }
@@ -91,45 +91,45 @@ int rd_master_daemon(void){
 
     syslog(LOG_INFO, "Starting master thread loop.");
     for (;;) {        
-        pthread_mutex_lock(&p.lock);
+        pthread_mutex_lock(&master_command_context.lock);
 
-        while (p.command == COMMAND_NONE){
+        while (master_command_context.command == COMMAND_NONE){
             syslog(LOG_INFO, "Waiting for command.");
-            pthread_cond_wait(&p.command_arrived, &p.lock); //wait until we receive a command
+            pthread_cond_wait(&master_command_context.command_arrived, &master_command_context.lock); //wait until we receive a command
         }
 
         syslog(LOG_INFO, "Command received.");
-        p.master_command_execution_status = MASTER_OK; 
+        master_command_context.master_command_execution_status = MASTER_OK; 
 
-        if (master_command_handler[p.command]() != 0){   //STATUS_FAILED will return 0, means the app can continue but audio will not run
+        if (master_command_handler[master_command_context.command]() != 0){   //STATUS_FAILED will return 0, means the app can continue but audio will not run
             terminate(SIGTERM);                          // true failure will return -1;
         }                       
 
-        if (p.master_command_execution_status == MASTER_FAILED){
+        if (master_command_context.master_command_execution_status == MASTER_FAILED){
             syslog(LOG_ERR, "ERROR: master_command_execution_status failed. Audio command will not run.");
-        } else if (p.master_command_execution_status == MASTER_OK){ //aka is master_command_execution_status wasnt changed by command TODO we could remove this
-            if (pthread_mutex_trylock(&ap.command_buffer.lock) == 0){
-                if (ap.command_buffer.command_queue_len < SIZE_COMMAND_QUEUE -1){
+        } else if (master_command_context.master_command_execution_status == MASTER_OK){ //aka is master_command_execution_status wasnt changed by command TODO we could remove this
+            if (pthread_mutex_trylock(&audio_player.command_buffer.lock) == 0){
+                if (audio_player.command_buffer.command_queue_len < SIZE_COMMAND_QUEUE -1){
                      //fill the commandbuffer of the audio thread
-                    ap.command_buffer.commands[ap.command_buffer.command_queue_len] = p.command;
-                    ap.command_buffer.command_flags[ap.command_buffer.command_queue_len] = p.command_flag;
-                    if (ap.command_buffer.command_queue_len < SIZE_COMMAND_QUEUE -1){
-                        ap.command_buffer.command_queue_len++;
+                    audio_player.command_buffer.commands[audio_player.command_buffer.command_queue_len] = master_command_context.command;
+                    audio_player.command_buffer.command_flags[audio_player.command_buffer.command_queue_len] = master_command_context.command_flag;
+                    if (audio_player.command_buffer.command_queue_len < SIZE_COMMAND_QUEUE -1){
+                        audio_player.command_buffer.command_queue_len++;
                     }
                 } else {
                     syslog(LOG_ERR, "ERROR: audio buffer full.");
                 }
-                pthread_cond_signal(&ap.command_buffer.command_arrived);
-                pthread_mutex_unlock(&ap.command_buffer.lock);
+                pthread_cond_signal(&audio_player.command_buffer.command_arrived);
+                pthread_mutex_unlock(&audio_player.command_buffer.lock);
             } else{
                 syslog(LOG_ERR, "ERROR: could not aquire audio command buffer lock.");
             }
         }
 
-        p.command = COMMAND_NONE;
-        p.command_flag = COMMAND_FLAG_NONE;
+        master_command_context.command = COMMAND_NONE;
+        master_command_context.command_flag = COMMAND_FLAG_NONE;
 
-        pthread_mutex_unlock(&p.lock);
+        pthread_mutex_unlock(&master_command_context.lock);
     }
 
     return 0;

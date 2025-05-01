@@ -9,35 +9,35 @@ int master_command_play_pause(){
 }
 
 int audio_command_play_pause(){
-    if (ap.state == STATE_UNINITIALIZED){
+    if (audio_player.state == STATE_UNINITIALIZED){
         syslog(LOG_ERR, "(AUDIO THREAD) ERROR: state uninitialized, nothing to play.");
         return 0;
     }
    
-    switch (ap.state){
+    switch (audio_player.state){
 
         // case STATE_DONE:
         //     syslog(LOG_INFO, "Playing new sound.");
         //     break;
 
         case STATE_PLAYING:
-            if (ma_sound_stop(&ap.sounds[ap.sound_curr_idx]) != 0){
+            if (ma_sound_stop(&audio_player.sounds[audio_player.sound_curr_idx]) != 0){
                 syslog(LOG_ERR, "(AUDIO THREAD) ERROR: Could not pause.");
                 return -1;
             }
-            ap.state = STATE_PAUSED;
-            syslog(LOG_INFO, "(AUDIO THREAD) Paused %s.", &ap.names[PATH_MAX*ap.sound_curr_idx]);
+            audio_player.state = STATE_PAUSED;
+            syslog(LOG_INFO, "(AUDIO THREAD) Paused %s.", &audio_player.names[PATH_MAX*audio_player.sound_curr_idx]);
             break;
         
         case STATE_INITIALIZED:
             syslog(LOG_INFO, "(AUDIO THREAD) Playing after.");
         case STATE_PAUSED:
-            if (ma_sound_start(&ap.sounds[ap.sound_curr_idx]) != 0){
+            if (ma_sound_start(&audio_player.sounds[audio_player.sound_curr_idx]) != 0){
                 syslog(LOG_ERR, "(AUDIO THREAD) ERROR: Could not play.");
                 return -1;
             }
-            syslog(LOG_INFO, "(AUDIO THREAD) Playing %s.", &ap.names[PATH_MAX*ap.sound_curr_idx]);
-            ap.state = STATE_PLAYING;
+            syslog(LOG_INFO, "(AUDIO THREAD) Playing %s.", &audio_player.names[PATH_MAX*audio_player.sound_curr_idx]);
+            audio_player.state = STATE_PLAYING;
             break;
             
         default:
@@ -60,58 +60,58 @@ int audio_command_close(){
 }//
 
 int audio_command_next(){
-    if (ap.state == STATE_UNINITIALIZED){
+    if (audio_player.state == STATE_UNINITIALIZED){
         syslog(LOG_ERR, "(AUDIO THREAD) ERROR: state uninitialized, nothing to play.");
         return 0;
     }
     int loop = 0;
-    if (ap.flags & PLAYER_FLAG_LOOP){ //Next overrides loop, but sets it back after
+    if (audio_player.flags & PLAYER_FLAG_LOOP){ //Next overrides loop, but sets it back after
         loop = 1;
-        ap.flags ^= PLAYER_FLAG_LOOP;
+        audio_player.flags ^= PLAYER_FLAG_LOOP;
     }
-    sound_end_callback(NULL, &ap.sounds[ap.sound_curr_idx]);
+    sound_end_callback(NULL, &audio_player.sounds[audio_player.sound_curr_idx]);
     if (loop){
-        ap.flags ^= PLAYER_FLAG_LOOP;
+        audio_player.flags ^= PLAYER_FLAG_LOOP;
     }
     return 0;
 }//
 
 int audio_command_prev(){
-    if (ap.state == STATE_UNINITIALIZED){
+    if (audio_player.state == STATE_UNINITIALIZED){
         syslog(LOG_ERR, "(AUDIO THREAD) ERROR: state uninitialized, nothing to play.");
         return 0;
     }
-    if (ap.sound_prev_idx[0] != -1){
-        ma_sound_stop(&ap.sounds[ap.sound_curr_idx]);
+    if (audio_player.sound_prev_idx[0] != -1){
+        ma_sound_stop(&audio_player.sounds[audio_player.sound_curr_idx]);
         syslog(LOG_INFO, "(AUDIO THREAD) Sound finished.");
-        ap.sound_curr_idx = ap.sound_prev_idx[0];
+        audio_player.sound_curr_idx = audio_player.sound_prev_idx[0];
         for (int i = 0; i< NUM_SOUND_PREV-1; i++){
-            ap.sound_prev_idx[i] = ap.sound_prev_idx[i+1];
+            audio_player.sound_prev_idx[i] = audio_player.sound_prev_idx[i+1];
         }
-        ap.sound_prev_idx[NUM_SOUND_PREV-1] = -1;
-        ap.state = STATE_PLAYING;
-        syslog(LOG_INFO, "(AUDIO THREAD) Playing prev sound %s.", &ap.names[PATH_MAX*ap.sound_curr_idx]);
-        ma_sound_start(&ap.sounds[ap.sound_curr_idx]);
+        audio_player.sound_prev_idx[NUM_SOUND_PREV-1] = -1;
+        audio_player.state = STATE_PLAYING;
+        syslog(LOG_INFO, "(AUDIO THREAD) Playing prev sound %s.", &audio_player.names[PATH_MAX*audio_player.sound_curr_idx]);
+        ma_sound_start(&audio_player.sounds[audio_player.sound_curr_idx]);
     }
     return 0;
 }//
 
 int master_command_open(){
     char prev_path_working_dir[PATH_MAX];
-    memcpy(prev_path_working_dir, p.path_working_dir, PATH_MAX);
-    if (choose_directory(p.path_working_dir, PATH_MAX) != 0){
+    memcpy(prev_path_working_dir, master_command_context.path_working_dir, PATH_MAX);
+    if (choose_directory(master_command_context.path_working_dir, PATH_MAX) != 0){
         syslog(LOG_ERR, "ERROR: open failed.");
-        memcpy(p.path_working_dir, prev_path_working_dir, PATH_MAX);
-        p.master_command_execution_status = MASTER_FAILED;
+        memcpy(master_command_context.path_working_dir, prev_path_working_dir, PATH_MAX);
+        master_command_context.master_command_execution_status = MASTER_FAILED;
     }
-    syslog(LOG_INFO, "Set working dir to %s", p.path_working_dir);
+    syslog(LOG_INFO, "Set working dir to %s", master_command_context.path_working_dir);
     return 0;
 }
 
 int audio_command_open(){
     DIR *dir;
     struct dirent *dp;
-    if ((dir = opendir (p.path_working_dir)) == NULL) {
+    if ((dir = opendir (master_command_context.path_working_dir)) == NULL) {
         syslog(LOG_ERR, "(AUDIO THREAD) ERROR: Cannot open dir.");
         return -1;
     } 
@@ -134,14 +134,14 @@ int audio_command_open(){
         closedir(dir);
         return -1;
     }
-    ap.sounds = (ma_sound *)malloc(sounds_found * sizeof(ma_sound));
-    ap.names =  (char *)calloc(sounds_found, PATH_MAX);
-    if (ap.sounds == NULL){
-        syslog(LOG_ERR, "(AUDIO THREAD) Malloc failed to allocate space for %d sounds.", ap.num_sounds);
+    audio_player.sounds = (ma_sound *)malloc(sounds_found * sizeof(ma_sound));
+    audio_player.names =  (char *)calloc(sounds_found, PATH_MAX);
+    if (audio_player.sounds == NULL){
+        syslog(LOG_ERR, "(AUDIO THREAD) Malloc failed to allocate space for %d sounds.", audio_player.num_sounds);
         return -1;
     }
-    ap.num_sounds = sounds_found;
-    syslog(LOG_INFO, "(AUDIO THREAD) Malloc'd space for %d sounds.", ap.num_sounds);
+    audio_player.num_sounds = sounds_found;
+    syslog(LOG_INFO, "(AUDIO THREAD) Malloc'd space for %d sounds.", audio_player.num_sounds);
     int sounds_loaded = 0;
     rewinddir(dir);
     char sound_path[PATH_MAX];
@@ -149,16 +149,16 @@ int audio_command_open(){
         if ((strstr(dp->d_name, ".mp3") != NULL) || 
             (strstr(dp->d_name, ".wav") != NULL) ||
             (strstr(dp->d_name, ".flac") != NULL)){
-            memcpy(&ap.names[PATH_MAX*sounds_loaded], dp->d_name, PATH_MAX);
-            memcpy(sound_path, p.path_working_dir, PATH_MAX);
+            memcpy(&audio_player.names[PATH_MAX*sounds_loaded], dp->d_name, PATH_MAX);
+            memcpy(sound_path, master_command_context.path_working_dir, PATH_MAX);
             strcat(sound_path, dp->d_name);
             //try MA_SOUND_FLAG_ASYNC | MA_SOUND_FLAG_STREAM
-            if (ma_sound_init_from_file(&ap.engine, sound_path,  0, NULL, NULL, &ap.sounds[sounds_loaded]) != 0){
+            if (ma_sound_init_from_file(&audio_player.engine, sound_path,  0, NULL, NULL, &audio_player.sounds[sounds_loaded]) != 0){
                 syslog(LOG_ERR, "(AUDIO THREAD) ERROR: Could not initialize sound %s.", sound_path);
                 closedir(dir);
                 return -1;
             }
-            if (ma_sound_set_end_callback(&ap.sounds[sounds_loaded], sound_end_callback, NULL) != 0){
+            if (ma_sound_set_end_callback(&audio_player.sounds[sounds_loaded], sound_end_callback, NULL) != 0){
                 syslog(LOG_ERR, "(AUDIO THREAD) ERROR: Could not set ma end callback for %s.", sound_path);
                 closedir(dir);
                 return -1;
@@ -169,15 +169,15 @@ int audio_command_open(){
         }
     }
     closedir(dir);
-    if (sounds_loaded != ap.num_sounds){
+    if (sounds_loaded != audio_player.num_sounds){
         syslog(LOG_ERR, "(AUDIO THREAD) ERROR: Could not load all sounds.");
         return -1;
     }
-    ap.sound_curr_idx = 0;
+    audio_player.sound_curr_idx = 0;
     for (int i = 0; i < NUM_SOUND_PREV; i++){
-        ap.sound_prev_idx[i] = -1;
+        audio_player.sound_prev_idx[i] = -1;
     }
-    ap.state = STATE_INITIALIZED;
+    audio_player.state = STATE_INITIALIZED;
     syslog(LOG_INFO, "(AUDIO THREAD) Successfully loaded all %d sounds.", sounds_loaded);
     return 0;
 }
@@ -193,21 +193,21 @@ int master_command_help(){
 
 
 int audio_command_toggle_random(){
-    ap.flags ^= PLAYER_FLAG_RANDOM;
-    syslog(LOG_INFO, "(AUDIO THREAD) Audio player random flag set to %d.", ((ap.flags & PLAYER_FLAG_RANDOM)!=0));
+    audio_player.flags ^= PLAYER_FLAG_RANDOM;
+    syslog(LOG_INFO, "(AUDIO THREAD) Audio player random flag set to %d.", ((audio_player.flags & PLAYER_FLAG_RANDOM)!=0));
     return 0;
 }
 
 int audio_command_toggle_loop(void){
-    ap.flags ^= PLAYER_FLAG_LOOP;
-    syslog(LOG_INFO, "(AUDIO THREAD) Audio player loop flag set to %d.", ((ap.flags & PLAYER_FLAG_LOOP)!=0));
+    audio_player.flags ^= PLAYER_FLAG_LOOP;
+    syslog(LOG_INFO, "(AUDIO THREAD) Audio player loop flag set to %d.", ((audio_player.flags & PLAYER_FLAG_LOOP)!=0));
     return 0;
 }
 
 
 int audio_command_seek(void){
     float sound_length_seconds;
-    ma_sound *psound = &ap.sounds[ap.sound_curr_idx];
+    ma_sound *psound = &audio_player.sounds[audio_player.sound_curr_idx];
     if (ma_sound_get_length_in_seconds(psound, &sound_length_seconds)!=0){
         syslog(LOG_ERR, "(AUDIO THREAD) ERROR: Could not get sound length.");
         return 0;
@@ -219,7 +219,7 @@ int audio_command_seek(void){
         return 0;
     }
     float seconds = 0.0f;
-    switch (ap.command_flag){
+    switch (audio_player.command_flag){
         case COMMAND_FLAG_SEEK_0:
             seconds = 0.0f;
             break;
