@@ -6,7 +6,7 @@
 //GUI
 #if PLUGIN_GUI == 1
 
-#include <SDL2/SDL.h>
+#include <SDL2/SDL.h> //TODO why not sdl3?
 int gui_show_help_menu(void);
 
 #endif

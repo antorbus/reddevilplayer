@@ -6,6 +6,7 @@ fix this
 compile SDL without audio
 
 TODO: 
+ - fix next starts palying song?? is this good or bad? (think)
  - make player start playing right after open
  - addm "emac-like" compilation so that you can compile without gui + plugins 
  - fix key log thread crashing after lldb
@@ -36,5 +37,5 @@ TODO:
  - multiple queue things buttons to add songs to queue
  - better status bar logo
  - show song name + playtime + random + algorithmic + liked
- - support for SID etc
+ - support for SID etc (for this do data_callback on miniaudio with a plugin to libsidplayfp, will also work for other formats)
  - maybe start playback from prev song

@@ -15,6 +15,38 @@ struct playback_command_context master_command_context = {
 pthread_t audio_thread          = NULL;
 pthread_t key_monitor_thread    = NULL;
 
+int initialize_ma(void){
+    if(ma_engine_init(NULL, &audio_player.engine)!=0){
+        syslog(LOG_ERR, "ERROR: Could not initialize miniaudio engine.");
+        return -1;
+    }
+    return 0;
+}
+
+int initialize_threads(void){
+    if (pthread_create(&audio_thread, NULL, rd_audio_thread, NULL) != 0) {
+        syslog(LOG_ERR, "ERROR: Pthread_create failed (audio thread).");
+        return -1;
+    }
+
+    if (pthread_detach(audio_thread) != 0){
+        syslog(LOG_ERR, "ERROR: Pthread_detach failed (audio thread).");
+        return -1;
+    }
+
+    if (pthread_create(&key_monitor_thread, NULL, rd_key_monitor_thread, NULL) != 0) {
+        syslog(LOG_ERR, "ERROR: Pthread_create failed (key monitor thread thread).");
+        return -1;
+    }
+    
+    if (pthread_detach(key_monitor_thread) != 0){
+        syslog(LOG_ERR, "ERROR: Pthread_detach failed (key monitor thread thread).");
+        return -1;
+    }
+
+    return 0;
+}
+
 int initialize(void){
     srand(time(NULL));
 
@@ -35,28 +67,11 @@ int initialize(void){
     signal(SIGINT, terminate);
     signal(SIGTERM, terminate);
 
-    if(ma_engine_init(NULL, &audio_player.engine)!=0){
-        syslog(LOG_ERR, "ERROR: Could not initialize miniaudio engine.");
+    if (initialize_ma()!=0){
         return -1;
     }
 
-    if (pthread_create(&audio_thread, NULL, rd_audio_thread, NULL) != 0) {
-        syslog(LOG_ERR, "ERROR: Pthread_create failed (audio thread).");
-        return -1;
-    }
-
-    if (pthread_detach(audio_thread) != 0){
-        syslog(LOG_ERR, "ERROR: Pthread_detach failed (audio thread).");
-        return -1;
-    }
-
-    if (pthread_create(&key_monitor_thread, NULL, rd_key_monitor_thread, NULL) != 0) {
-        syslog(LOG_ERR, "ERROR: Pthread_create failed (key monitor thread thread).");
-        return -1;
-    }
-    
-    if (pthread_detach(key_monitor_thread) != 0){
-        syslog(LOG_ERR, "ERROR: Pthread_detach failed (key monitor thread thread).");
+    if (initialize_threads()!=0){
         return -1;
     }
 
