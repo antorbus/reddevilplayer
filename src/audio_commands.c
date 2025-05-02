@@ -110,7 +110,8 @@ int audio_command_open(){
     while ((dp = readdir(dir)) != NULL) { 
         if ((strstr(dp->d_name, ".mp3") != NULL) || 
             (strstr(dp->d_name, ".flac") != NULL) ||
-            (strstr(dp->d_name, ".wav") != NULL)) {
+            (strstr(dp->d_name, ".wav") != NULL) ||
+            (strstr(dp->d_name, ".ogg") != NULL) ) {
             syslog(LOG_INFO, "(AUDIO THREAD) Found sound %s", dp->d_name);
             sounds_found++;
         }
@@ -138,7 +139,8 @@ int audio_command_open(){
     while ((dp = readdir(dir)) != NULL) {
         if ((strstr(dp->d_name, ".mp3") != NULL) || 
             (strstr(dp->d_name, ".wav") != NULL) ||
-            (strstr(dp->d_name, ".flac") != NULL)){
+            (strstr(dp->d_name, ".flac") != NULL) ||
+            (strstr(dp->d_name, ".ogg") != NULL)){
             memcpy(&audio_player.names[PATH_MAX*sounds_loaded], dp->d_name, PATH_MAX);
             memcpy(sound_path, master_command_context.path_working_dir, PATH_MAX);
             strcat(sound_path, dp->d_name);

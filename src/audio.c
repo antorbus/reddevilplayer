@@ -2,6 +2,8 @@
 
 struct audio_player_context audio_player = {  
     .engine                     = {},  
+    .resource_manager           = {},
+    .decoder_backends           = {0},
     .num_sounds                 = 0, 
     .names                      = NULL,
     .sound_prev_idx             = {[0 ... NUM_SOUND_PREV-1] = -1},
@@ -18,6 +20,34 @@ struct audio_player_context audio_player = {
                                     .command_arrived =      PTHREAD_COND_INITIALIZER}
 };
 
+void data_callback(ma_device* p_device, void* p_output, const void* p_input, ma_uint32 frame_count){
+    ma_engine_read_pcm_frames(&audio_player.engine, p_output, frame_count, NULL);
+}
+
+int initialize_ma(void){
+    audio_player.decoder_backends[0] = ma_decoding_backend_libvorbis;
+
+    ma_resource_manager_config resource_manager_config = ma_resource_manager_config_init();
+    resource_manager_config.pCustomDecodingBackendUserData = NULL;
+    resource_manager_config.ppCustomDecodingBackendVTables = audio_player.decoder_backends;
+    resource_manager_config.customDecodingBackendCount = NUM_DECODER_BACKENDS;
+    if (ma_resource_manager_init(&resource_manager_config, &audio_player.resource_manager) != 0) {
+        syslog(LOG_ERR, "ERROR: Could not initialize resource manager.");
+        return -1;
+    }
+
+    ma_engine_config engine_config = ma_engine_config_init();
+    engine_config.pResourceManager = &audio_player.resource_manager;
+
+    engine_config.dataCallback = data_callback;
+    if(ma_engine_init(&engine_config, &audio_player.engine)!=0){
+        syslog(LOG_ERR, "ERROR: Could not initialize miniaudio engine.");
+        return -1;
+    }
+
+    return 0;
+}
+
 void * rd_audio_thread(void *arg) {
     pthread_setname_np("RDaudiothread");
     while (1) {
@@ -33,8 +63,8 @@ void * rd_audio_thread(void *arg) {
                 }
                 audio_player.command_buffer.commands[SIZE_COMMAND_QUEUE-1] = COMMAND_NONE;
                 audio_player.command_buffer.command_flags[SIZE_COMMAND_QUEUE-1] = COMMAND_FLAG_NONE;
-                audio_player.command_buffer.command_queue_len--;
                 syslog(LOG_INFO, "(AUDIO THREAD) Audio command size is %llu.", audio_player.command_buffer.command_queue_len);
+                audio_player.command_buffer.command_queue_len--;
 
             } else{
                 syslog(LOG_INFO, "(AUDIO THREAD) No commands.");

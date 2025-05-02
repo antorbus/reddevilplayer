@@ -2,7 +2,7 @@ SRCDIR        := src
 METALDIR      := $(SRCDIR)/metal
 PLUGINSDIR	  := $(SRCDIR)/plugins
 EXTERNALDIR   := external
-MINIAUDIODIR  := $(EXTERNALDIR)/miniaudio/src
+MINIAUDIODIR  := $(EXTERNALDIR)/miniaudio
 
 
 CC      := clang
@@ -12,10 +12,12 @@ LDFLAGS := -lpthread \
            -framework CoreFoundation \
            -framework Carbon \
 		   -framework Cocoa \
+		   -lvorbisfile -lvorbis -logg \
 
 CURL          := curl -L
 
 SRCS := $(MINIAUDIODIR)/miniaudio.c \
+		$(MINIAUDIODIR)/extras/decoders/libvorbis/miniaudio_libvorbis.c \
 		$(wildcard $(SRCDIR)/*.c) \
 		$(wildcard $(METALDIR)/*.c) \
 		$(wildcard $(PLUGINSDIR)/*.c)
@@ -37,7 +39,11 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 external: $(MINIAUDIODIR)/miniaudio.c \
-          $(MINIAUDIODIR)/miniaudio.h 
+          $(MINIAUDIODIR)/miniaudio.h \
+		  $(MINIAUDIODIR)/extras/decoders/libvorbis/miniaudio_libvorbis.h \
+		  $(MINIAUDIODIR)/extras/decoders/libvorbis/miniaudio_libvorbis.c \
+		#   $(MINIAUDIODIR)/extras/decoders/libopus/miniaudio_libopus.h \
+		#   $(MINIAUDIODIR)/extras/decoders/libopus/miniaudio_libopus.c
 	@echo "External libraries ready." 
 
 
@@ -47,11 +53,31 @@ $(EXTERNALDIR):
 $(MINIAUDIODIR):
 	@mkdir -p $@
 
+$(MINIAUDIODIR)/extras/decoders/libvorbis:
+	@mkdir -p $@
+
+# $(MINIAUDIODIR)/extras/decoders/libopus:
+# 	@mkdir -p $@
+
 $(MINIAUDIODIR)/miniaudio.h: | $(MINIAUDIODIR)
 	@$(CURL) https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.h -o $@
 
 $(MINIAUDIODIR)/miniaudio.c: | $(MINIAUDIODIR)
 	@$(CURL) https://raw.githubusercontent.com/mackron/miniaudio/master/miniaudio.c -o $@
+
+$(MINIAUDIODIR)/extras/decoders/libvorbis/miniaudio_libvorbis.c: | $(MINIAUDIODIR)/extras/decoders/libvorbis
+	@$(CURL) https://raw.githubusercontent.com/mackron/miniaudio/master/extras/decoders/libvorbis/miniaudio_libvorbis.c -o $@
+
+$(MINIAUDIODIR)/extras/decoders/libvorbis/miniaudio_libvorbis.h: | $(MINIAUDIODIR)/extras/decoders/libvorbis
+	@$(CURL) https://raw.githubusercontent.com/mackron/miniaudio/master/extras/decoders/libvorbis/miniaudio_libvorbis.h -o $@
+
+# $(MINIAUDIODIR)/extras/decoders/libopus/miniaudio_libopus.c: | $(MINIAUDIODIR)/extras/decoders/libopus
+# 	@$(CURL) https://raw.githubusercontent.com/mackron/miniaudio/master/extras/decoders/libopus/miniaudio_libopus.c -o $@
+
+# $(MINIAUDIODIR)/extras/decoders/libopus/miniaudio_libopus.h: | $(MINIAUDIODIR)/extras/decoders/libopus
+# 	@$(CURL) https://raw.githubusercontent.com/mackron/miniaudio/master/extras/decoders/libopus/miniaudio_libopus.h -o $@
+
+
 
 run: $(TARGET)
 	./$(TARGET)

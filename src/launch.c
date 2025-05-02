@@ -15,14 +15,6 @@ struct playback_command_context master_command_context = {
 pthread_t audio_thread          = NULL;
 pthread_t key_monitor_thread    = NULL;
 
-int initialize_ma(void){
-    if(ma_engine_init(NULL, &audio_player.engine)!=0){
-        syslog(LOG_ERR, "ERROR: Could not initialize miniaudio engine.");
-        return -1;
-    }
-    return 0;
-}
-
 int initialize_threads(void){
     if (pthread_create(&audio_thread, NULL, rd_audio_thread, NULL) != 0) {
         syslog(LOG_ERR, "ERROR: Pthread_create failed (audio thread).");

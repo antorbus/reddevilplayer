@@ -21,6 +21,7 @@ void*   rd_key_monitor_thread(void *arg);
 void    terminate(int sig);
 void    print_bindings(void);
 int     is_already_running(void);
+int     initialize_ma(void);
 
 typedef enum {
     COMMAND_NONE = 0,     
